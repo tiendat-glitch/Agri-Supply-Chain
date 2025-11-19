@@ -1,0 +1,6 @@
+@QL_chuoi_cung_ung_nong_san_HostAddress = http://localhost:5169
+
+GET {{QL_chuoi_cung_ung_nong_san_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
