@@ -5,6 +5,10 @@ namespace QL_chuoi_cung_ung_nong_san.Models;
 
 public partial class Product
 {
+    public Product()
+    {
+        Batches = new HashSet<Batch>();
+    }
     public int Id { get; set; }
 
     public string Name { get; set; } = null!;
