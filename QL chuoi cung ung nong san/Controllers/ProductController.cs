@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using QL_chuoi_cung_ung_nong_san.Code;
 using QL_chuoi_cung_ung_nong_san.Models;
 using System.Linq;
+using static QL_chuoi_cung_ung_nong_san.Code.ProductModels;
 
 namespace QL_chuoi_cung_ung_nong_san.Controllers
 {
@@ -45,7 +45,7 @@ namespace QL_chuoi_cung_ung_nong_san.Controllers
 
         [Route("create")]
         [HttpPost]
-        public IActionResult Create([FromBody]ProductCreateModel model)
+        public IActionResult Create([FromBody] ProductCreateModel model)
         {
             try
             {
