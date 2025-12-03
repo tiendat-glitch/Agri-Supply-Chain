@@ -2,7 +2,7 @@
   <Folder Name="/BLL/">
     <Project Path="BLL/BLL.csproj" Id="160fe750-4af5-4999-8062-ff8f3f42b494" />
   </Folder>
-  <Folder Name="/ChuoiCungUng_prj_API/">
+  <Folder Name="/ChuoiCungUng_pj_API/">
     <Project Path="QL chuoi cung ung nong san/ChuoiCungUngNS_pj_API.csproj" />
   </Folder>
   <Folder Name="/DAL/">

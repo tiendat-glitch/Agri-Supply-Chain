@@ -2,26 +2,23 @@
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- 1. Lấy connection string từ appsettings.json ---
-string connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// 1. DI
+builder.Services.AddScoped<ProductBusiness>();
+builder.Services.AddScoped<UserBusiness>();
 
-// --- 2. Đăng ký BLL vào DI ---
-builder.Services.AddSingleton(new ProductBusiness(connectionString));
-
-// --- 3. Thêm controller và Swagger ---
+// 2. Controller + Swagger
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// --- 4. CORS ---
+// 3. CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
         policy.WithOrigins(
-                "https://localhost:7111",
-                "http://127.0.0.1:5501",
-                "https://localhost:7028")
+                "http://localhost:5501",
+                "http://127.0.0.1:5501")
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
@@ -30,35 +27,20 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// --- 5. Middleware ---
+// 4. Swagger
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
-        c.RoutePrefix = string.Empty; // Swagger ở /
-    });
-
-    // --- Mở Swagger tự động ---
-    var swaggerUrl = "https://localhost:7246"; // Thay port đúng terminal hiển thị
-    try
-    {
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-        {
-            FileName = swaggerUrl,
-            UseShellExecute = true
-        });
-    }
-    catch { }
+    app.UseSwaggerUI();
 }
 
+// 5. Middleware
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 app.UseAuthorization();
 
-// --- 6. Map controllers ---
+// 6. Controllers
 app.MapControllers();
 
-// --- 7. Run ứng dụng ---
+// 7. Run app
 app.Run();
