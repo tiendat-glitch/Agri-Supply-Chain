@@ -1,3 +1,14 @@
 <Solution>
-  <Project Path="QL chuoi cung ung nong san/QL chuoi cung ung nong san.csproj" />
+  <Folder Name="/BLL/">
+    <Project Path="BLL/BLL.csproj" Id="160fe750-4af5-4999-8062-ff8f3f42b494" />
+  </Folder>
+  <Folder Name="/ChuoiCungUng_prj_API/">
+    <Project Path="QL chuoi cung ung nong san/QL chuoi cung ung nong san.csproj" />
+  </Folder>
+  <Folder Name="/DAL/">
+    <Project Path="DAL/DAL.csproj" Id="f97939b0-c335-4bca-9025-2c36c291ff9e" />
+  </Folder>
+  <Folder Name="/Model/">
+    <Project Path="Model/Model.csproj" Id="3783743a-1478-48a4-a05e-2f36f3e93989" />
+  </Folder>
 </Solution>

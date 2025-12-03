@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
-namespace QL_chuoi_cung_ung_nong_san.Models;
+namespace Model;
 
 public partial class AgriContext : DbContext
 {

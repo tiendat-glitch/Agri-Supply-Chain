@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace QL_chuoi_cung_ung_nong_san.Models;
+namespace Model;
 
 public partial class User
 {

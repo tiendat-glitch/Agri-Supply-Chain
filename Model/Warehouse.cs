@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace QL_chuoi_cung_ung_nong_san.Models;
+namespace Model;
 
-public partial class Retailer
+public partial class Warehouse
 {
     public int Id { get; set; }
 
@@ -13,7 +13,9 @@ public partial class Retailer
 
     public string? ContactInfo { get; set; }
 
+    public bool IsActive { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
-    public virtual ICollection<RetailerStock> RetailerStocks { get; set; } = new List<RetailerStock>();
+    public virtual ICollection<WarehouseStock> WarehouseStocks { get; set; } = new List<WarehouseStock>();
 }
