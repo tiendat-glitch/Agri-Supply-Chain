@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using BLL;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using QL_chuoi_cung_ung_nong_san.Models;
+using Model;
+using static BLL.ProductBusiness;
 
 namespace QL_chuoi_cung_ung_nong_san.Controllers
 {
