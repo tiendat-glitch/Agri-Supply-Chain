@@ -1,5 +1,6 @@
 ﻿using DAL;
 using DAL.Helper;
+using Microsoft.Extensions.Configuration;
 using Model;
 using System;
 using System.Collections.Generic;
@@ -12,10 +13,11 @@ namespace BLL
     {
         private readonly ProductRepository dal;
 
-        public ProductBusiness(string connectionString)
+        public ProductBusiness(IConfiguration config)
         {
-            DatabaseHelper dataHelper = new DatabaseHelper(connectionString);
-            dal = new ProductRepository(dataHelper);
+            string connectionString = config.GetConnectionString("DefaultConnection");
+            var helper = new DatabaseHelper(connectionString);
+            dal = new ProductRepository(helper);
         }
 
         public List<Product> GetAllProducts()

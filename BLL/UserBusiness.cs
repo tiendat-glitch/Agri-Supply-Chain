@@ -1,5 +1,6 @@
 ﻿using DAL;
 using DAL.Helper;
+using Microsoft.Extensions.Configuration;
 using Model;
 using System;
 using System.Collections.Generic;
@@ -13,10 +14,11 @@ namespace BLL
     {
         private readonly UserRepository dal;
 
-        public UserBusiness(string connectionString)
+        public UserBusiness(IConfiguration config)
         {
-            DatabaseHelper dataHelper = new DatabaseHelper(connectionString);
-            dal = new UserRepository(dataHelper);
+            string connectionString = config.GetConnectionString("DefaultConnection");
+            var helper = new DatabaseHelper(connectionString);
+            dal = new UserRepository(helper);
         }
 
         public List<User> GetAllUsers()
