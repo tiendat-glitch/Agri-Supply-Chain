@@ -10,11 +10,12 @@ namespace QL_chuoi_cung_ung_nong_san.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
-        private readonly UserBusiness bll;
+        private UserBusiness bll;
         public UserController(UserBusiness service)
         {
             bll = service;
         }
+        [Route("get-all")]
         [HttpGet]
         public IActionResult GetAll()
         {

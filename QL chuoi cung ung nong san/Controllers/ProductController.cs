@@ -10,7 +10,7 @@ namespace QL_chuoi_cung_ung_nong_san.Controllers
     [ApiController]
     public class ProductController : ControllerBase
     {
-        private readonly ProductBusiness bll;
+        private ProductBusiness bll;
 
         public ProductController(ProductBusiness service)
         {
