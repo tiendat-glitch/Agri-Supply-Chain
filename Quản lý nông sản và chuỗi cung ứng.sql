@@ -1,4 +1,4 @@
-CREATE DATABASE agri_supplychain;
+﻿CREATE DATABASE agri_supplychain;
 GO
 USE agri_supplychain;
 GO
@@ -218,6 +218,143 @@ CREATE TABLE dbo.audit_logs (
 );
 GO
 -----------------------------------------------------------------------------------
+--Procedure
+-------------------------User--------------------------
+--lấy tất cả user
+CREATE PROCEDURE GetAllUsers
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        id,
+        username,
+        password_hash,
+        full_name,
+        email,
+        phone,
+        role,
+        created_at
+    FROM dbo.users;
+END
+--Lấy theo ID
+CREATE PROCEDURE GetUserById
+    @UserId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        id,
+        username,
+        password_hash,
+        full_name,
+        email,
+        phone,
+        role,
+        created_at
+    FROM dbo.users
+    WHERE id = @UserId;
+END
+--Lấy theo tên
+CREATE PROCEDURE GetUserByUsername
+    @Username NVARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        id,
+        username,
+        password_hash,
+        full_name,
+        email,
+        phone,
+        role,
+        created_at
+    FROM dbo.users
+    WHERE username = @Username;
+END
+--Đăng ký user mới
+CREATE PROCEDURE InsertUser
+    @Username NVARCHAR(100),
+    @PasswordHash NVARCHAR(255),
+    @FullName NVARCHAR(200) = NULL,
+    @Email NVARCHAR(255) = NULL,
+    @Phone NVARCHAR(50) = NULL,
+    @Role NVARCHAR(20)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO dbo.users (username, password_hash, full_name, email, phone, role)
+    VALUES (@Username, @PasswordHash, @FullName, @Email, @Phone, @Role);
+END
+--Cập nhật user
+CREATE PROCEDURE UpdateUser
+    @UserId INT,
+    @FullName NVARCHAR(200) = NULL,
+    @Email NVARCHAR(255) = NULL,
+    @Phone NVARCHAR(50) = NULL,
+    @Role NVARCHAR(20) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE dbo.users
+    SET 
+        full_name = COALESCE(@FullName, full_name),
+        email = COALESCE(@Email, email),
+        phone = COALESCE(@Phone, phone),
+        role = COALESCE(@Role, role)
+    WHERE id = @UserId;
+END
+--Xoá user
+CREATE PROCEDURE DeleteUser
+    @UserId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DELETE FROM dbo.users
+    WHERE id = @UserId;
+END
+--Đổi mật khẩu
+CREATE PROCEDURE UpdateUserPassword
+    @UserId INT,
+    @PasswordHash NVARCHAR(255)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Cập nhật mật khẩu cho user theo Id
+    UPDATE dbo.users
+    SET password_hash = @PasswordHash
+    WHERE id = @UserId;
+END
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 -- 1. USERS
 INSERT INTO dbo.users (username, password_hash, full_name, role, email)
 VALUES 
