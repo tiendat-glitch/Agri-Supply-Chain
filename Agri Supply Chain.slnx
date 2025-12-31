@@ -11,5 +11,6 @@
   <Folder Name="/Model/">
     <Project Path="Model/Model.csproj" Id="3783743a-1478-48a4-a05e-2f36f3e93989" />
   </Folder>
+  <Project Path="API_Adm/API_Adm.csproj" Id="4d3f8664-336e-468c-9e24-0fbf5fa0ab55" />
   <Project Path="API_Gateway/API_Gateway.csproj" Id="5f342453-fdc4-46cd-8c10-c6a2becb0f98" />
 </Solution>
