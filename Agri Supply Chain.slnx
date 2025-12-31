@@ -1,9 +1,9 @@
 <Solution>
+  <Folder Name="/API_User/">
+    <Project Path="QL chuoi cung ung nong san/ChuoiCungUngNS_pj_API.csproj" />
+  </Folder>
   <Folder Name="/BLL/">
     <Project Path="BLL/BLL.csproj" Id="160fe750-4af5-4999-8062-ff8f3f42b494" />
-  </Folder>
-  <Folder Name="/ChuoiCungUng_pj_API/">
-    <Project Path="QL chuoi cung ung nong san/ChuoiCungUngNS_pj_API.csproj" />
   </Folder>
   <Folder Name="/DAL/">
     <Project Path="DAL/DAL.csproj" Id="f97939b0-c335-4bca-9025-2c36c291ff9e" />
@@ -11,4 +11,5 @@
   <Folder Name="/Model/">
     <Project Path="Model/Model.csproj" Id="3783743a-1478-48a4-a05e-2f36f3e93989" />
   </Folder>
+  <Project Path="API_Gateway/API_Gateway.csproj" Id="5f342453-fdc4-46cd-8c10-c6a2becb0f98" />
 </Solution>
