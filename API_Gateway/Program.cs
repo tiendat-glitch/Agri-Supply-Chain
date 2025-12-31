@@ -1,23 +1,49 @@
+using API_Gateway;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Ocelot.DependencyInjection;
+using Ocelot.Middleware;
+using System.Text;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Load ocelot.json
+builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
 
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// Bind JWT setting
+builder.Services.Configure<JWTsetting>(
+    builder.Configuration.GetSection("JWTsetting"));
+
+var jwt = builder.Configuration
+    .GetSection("JWTsetting")
+    .Get<JWTsetting>();
+
+// JWT Authentication
+builder.Services.AddAuthentication("Bearer")
+.AddJwtBearer("Bearer", options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateIssuerSigningKey = true,
+        ValidateLifetime = true,
+
+        ValidIssuer = jwt.Issuer,
+        ValidAudience = jwt.Audience,
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(jwt.Key))
+    };
+});
+
+// Ocelot
+builder.Services.AddOcelot();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
-
-app.UseHttpsRedirection();
-
+app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+await app.UseOcelot();
 
 app.Run();
