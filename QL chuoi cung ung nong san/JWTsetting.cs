@@ -1,4 +1,4 @@
-﻿namespace QL_chuoi_cung_ung_nong_san
+﻿namespace API_Auth.Settings
 {
     public class JWTsetting
     {

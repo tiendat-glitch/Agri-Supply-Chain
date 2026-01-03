@@ -11,6 +11,8 @@ CREATE TABLE dbo.users (
     full_name NVARCHAR(200),
     email NVARCHAR(255),
     phone NVARCHAR(50),
+	password_reset_token NVARCHAR(100) NULL,
+    password_reset_expiry DATETIME2 NULL,
     role NVARCHAR(20) NOT NULL CHECK (role IN ('admin','farmer','distributor','retailer')),
     created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
 );
@@ -320,19 +322,47 @@ BEGIN
     WHERE id = @UserId;
 END
 --Đổi mật khẩu
-CREATE PROCEDURE UpdateUserPassword
+CREATE PROCEDURE SP_ChangePassword
     @UserId INT,
-    @PasswordHash NVARCHAR(255)
+    @NewPasswordHash NVARCHAR(255)
 AS
 BEGIN
-    SET NOCOUNT ON;
-
-    -- Cập nhật mật khẩu cho user theo Id
-    UPDATE dbo.users
-    SET password_hash = @PasswordHash
-    WHERE id = @UserId;
+    UPDATE users
+    SET password_hash = @NewPasswordHash
+    WHERE id = @UserId
 END
-
+--Lấy user
+CREATE PROCEDURE SP_GetUserByUsername
+    @Username NVARCHAR(100)
+AS
+BEGIN
+    SELECT * FROM users WHERE username = @Username
+END
+--Quên mật khẩu
+CREATE PROCEDURE SP_SetPasswordResetToken
+    @Email NVARCHAR(255),
+    @ResetToken NVARCHAR(100),
+    @Expiry DATETIME2
+AS
+BEGIN
+    UPDATE users
+    SET password_reset_token = @ResetToken,
+        password_reset_expiry = @Expiry
+    WHERE email = @Email
+END
+--Reset mật khẩu = token
+CREATE PROCEDURE SP_ResetPassword
+    @ResetToken NVARCHAR(100),
+    @NewPasswordHash NVARCHAR(255)
+AS
+BEGIN
+    UPDATE users
+    SET password_hash = @NewPasswordHash,
+        password_reset_token = NULL,
+        password_reset_expiry = NULL
+    WHERE password_reset_token = @ResetToken
+      AND password_reset_expiry > SYSUTCDATETIME()
+END
 
 
 
