@@ -259,7 +259,7 @@ BEGIN
     WHERE id = @UserId;
 END
 --Lấy theo tên
-CREATE PROCEDURE GetUserByUsername
+CREATE PROCEDURE SP_Login
     @Username NVARCHAR(100)
 AS
 BEGIN
@@ -278,7 +278,7 @@ BEGIN
     WHERE username = @Username;
 END
 --Đăng ký user mới
-CREATE PROCEDURE InsertUser
+CREATE PROCEDURE SP_RegisterUser
     @Username NVARCHAR(100),
     @PasswordHash NVARCHAR(255),
     @FullName NVARCHAR(200) = NULL,
@@ -289,8 +289,8 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    INSERT INTO dbo.users (username, password_hash, full_name, email, phone, role)
-    VALUES (@Username, @PasswordHash, @FullName, @Email, @Phone, @Role);
+    INSERT INTO dbo.users (username, password_hash, full_name, email, phone, role, created_at)
+    VALUES (@Username, @PasswordHash, @FullName, @Email, @Phone, @Role, GETDATE());
 END
 --Cập nhật user
 CREATE PROCEDURE UpdateUser

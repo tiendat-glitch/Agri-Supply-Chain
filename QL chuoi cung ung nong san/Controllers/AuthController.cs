@@ -1,5 +1,5 @@
 ﻿using API_Auth.DTOs;
-using API_Auth.Services;
+using API_Auth.Settings;
 using BLL;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,13 +11,13 @@ namespace API_Auth.Controllers
     [Route("auth")]
     public class AuthController : ControllerBase
     {
-        private readonly UserBusiness _userBiz;
-        private readonly JwtService _jwtService;
+        private readonly UserBusiness bll;
+        private readonly JWTsetting jwtst;
 
-        public AuthController(UserBusiness userBiz, JwtService jwtService)
+        public AuthController(UserBusiness userBiz, JWTsetting jwtService)
         {
-            _userBiz = userBiz;
-            _jwtService = jwtService;
+            bll = userBiz;
+            jwtst = jwtService;
         }
 
         // ===================== LOGIN =====================
@@ -25,11 +25,11 @@ namespace API_Auth.Controllers
         [AllowAnonymous]
         public IActionResult Login([FromBody] LoginRequest req)
         {
-            var user = _userBiz.Login(req.Username, req.Password);
+            var user = bll.Login(req.Username, req.Password);
             if (user == null)
                 return Unauthorized("Sai username hoặc password");
 
-            var token = _jwtService.Generate(user);
+            var token = jwtst.Generate(user);
 
             return Ok(new
             {
@@ -49,7 +49,7 @@ namespace API_Auth.Controllers
         [AllowAnonymous]
         public IActionResult Register([FromBody] RegisterRequest req)
         {
-            _userBiz.Register(req);
+            bll.Register(req);
             return Ok("Đăng ký thành công");
         }
 
@@ -61,7 +61,7 @@ namespace API_Auth.Controllers
             int userId = int.Parse(
                 User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
-            var success = _userBiz.ChangePasswordWithOldPassword(
+            var success = bll.ChangePasswordWithOldPassword(
                 userId, req.OldPassword, req.NewPassword);
 
             if (!success)
@@ -75,7 +75,7 @@ namespace API_Auth.Controllers
         [AllowAnonymous]
         public IActionResult ForgotPassword([FromBody] ForgotPasswordRequest req)
         {
-            var token = _userBiz.CreateResetTokenByUsername(req.Username);
+            var token = bll.CreateResetTokenByUsername(req.Username);
             if (token == null)
                 return NotFound("User không tồn tại");
 
@@ -88,7 +88,7 @@ namespace API_Auth.Controllers
         [AllowAnonymous]
         public IActionResult ResetPassword([FromBody] ResetPasswordRequest req)
         {
-            var success = _userBiz.ResetPasswordByToken(
+            var success = bll.ResetPasswordByToken(
                 req.Token, req.NewPassword);
 
             if (!success)
