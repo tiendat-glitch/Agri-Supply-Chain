@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 
-namespace DAL
+namespace DAL.Repositories
 {
     public class ProductRepository
     {
