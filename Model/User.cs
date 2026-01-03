@@ -21,6 +21,10 @@ public partial class User
 
     public DateTime CreatedAt { get; set; }
 
+    public string? PasswordResetToken { get; set; }
+
+    public DateTime? PasswordResetExpiry { get; set; }
+
     public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
 
     public virtual ICollection<Batch> Batches { get; set; } = new List<Batch>();
