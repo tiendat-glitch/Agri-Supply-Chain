@@ -1,5 +1,5 @@
-﻿using DAL;
-using DAL.Helper;
+﻿using DAL.Helper;
+using DAL.Repositories;
 using Microsoft.Extensions.Configuration;
 using Model;
 using System;
