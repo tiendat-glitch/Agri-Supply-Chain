@@ -20,12 +20,16 @@ namespace BLL
         public User Login(string username, string password)
         {
             var user = _userRepo.GetUserByUsername(username)
-                       ?? throw new Exception("User không tồn tại");
+            ?? throw new Exception("User không tồn tại");
 
-            if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+            if (string.IsNullOrEmpty(user.PasswordHash))
+                throw new Exception("Mật khẩu chưa được đặt");
+          
+            bool valid = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
+            if (!valid)
                 throw new Exception("Sai mật khẩu");
 
-            return user; // API sẽ tạo JWT
+            return user;
         }
 
         // đăng ký
@@ -54,21 +58,30 @@ namespace BLL
         }
 
         // quên mk
-        public void ForgotPassword(string email)
+        public string ForgotPassword(string email)
         {
-            string token = Guid.NewGuid().ToString();
+            // Lấy user theo email
+            var user = _userRepo.GetUserByEmail(email)
+                       ?? throw new Exception("Email không tồn tại");
+
+            // Tạo token mới
+            string token = Guid.NewGuid().ToString("N");
             DateTime expiry = DateTime.UtcNow.AddMinutes(15);
 
-            _userRepo.SetPasswordResetToken(email, token, expiry);
+            // Lưu token vào DB
+            _userRepo.SetPasswordResetToken(user.Id, token, expiry);
+
+            // Trả token ra controller
+            return token;
         }
 
         // reset = token
-        public void ResetPassword(string resetToken, string newPassword)
+        public void ResetPassword(string token, string newPassword)
         {
             string hash = BCrypt.Net.BCrypt.HashPassword(newPassword);
-            int result = _userRepo.ResetPassword(resetToken, hash);
+            int rowsAffected = _userRepo.ResetPassword(token, hash);
 
-            if (result == 0)
+            if (rowsAffected == 0)
                 throw new Exception("Token không hợp lệ hoặc đã hết hạn");
         }
 

@@ -1,100 +1,200 @@
 ﻿using API_Auth.DTOs;
-using API_Auth.Settings;
+using API_Auth.Services;
 using BLL;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Model;
 using System.Security.Claims;
 
 namespace API_Auth.Controllers
 {
+    [Route("api/auth")]
     [ApiController]
-    [Route("auth")]
     public class AuthController : ControllerBase
     {
-        private readonly UserBusiness bll;
-        private readonly JWTsetting jwtst;
+        private readonly UserBusiness _userBusiness;
+        private readonly JwtTokenService _jwtService;
 
-        public AuthController(UserBusiness userBiz, JWTsetting jwtService)
+        public AuthController(
+            UserBusiness userBusiness,
+            JwtTokenService jwtService)
         {
-            bll = userBiz;
-            jwtst = jwtService;
+            _userBusiness = userBusiness;
+            _jwtService = jwtService;
         }
 
-        // ===================== LOGIN =====================
         [HttpPost("login")]
-        [AllowAnonymous]
-        public IActionResult Login([FromBody] LoginRequest req)
+        public IActionResult Login(LoginRequest request)
         {
-            var user = bll.Login(req.Username, req.Password);
-            if (user == null)
-                return Unauthorized("Sai username hoặc password");
+            try
+            {
+                if (string.IsNullOrEmpty(request.Username))
+                    throw new Exception("Username không được để trống");
+                if (string.IsNullOrEmpty(request.Password))
+                    throw new Exception("Password không được để trống");
 
-            var token = jwtst.Generate(user);
+                var user = _userBusiness.Login(request.Username, request.Password);
+
+                var token = _jwtService.GenerateToken(user);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Đăng nhập thành công",
+                    data = new
+                    {
+                        token,
+                        user = new
+                        {
+                            user.Id,
+                            user.Username,
+                            user.FullName,
+                            user.Email,
+                            user.Phone,
+                            user.Role
+                        }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = ex.Message,
+                    detail = ex.ToString() // stack trace đầy đủ
+                });
+            }
+        }
+
+
+        [HttpPost("register")]
+        public IActionResult Register(RegisterRequest request)
+        {
+            try
+            {
+                var user = new User
+                {
+                    Username = request.Username,
+                    FullName = request.FullName,
+                    Email = request.Email,
+                    Phone = request.Phone,
+                    Role = request.Role
+                };
+
+                _userBusiness.Register(user, request.Password);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Đăng ký thành công"
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
+        }
+
+        [Authorize]
+        [HttpGet("me")]
+        public IActionResult Me()
+        {
+            int userId = int.Parse(
+                User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            var user = _userBusiness.GetProfile(userId);
 
             return Ok(new
             {
-                token,
-                user = new
-                {
-                    user.Id,
-                    user.Username,
-                    user.FullName,
-                    user.Role
-                }
+                success = true,
+                data = user
             });
         }
 
-        // ===================== REGISTER =====================
-        [HttpPost("register")]
-        [AllowAnonymous]
-        public IActionResult Register([FromBody] RegisterRequest req)
-        {
-            bll.Register(req);
-            return Ok("Đăng ký thành công");
-        }
-
-        // ===================== CHANGE PASSWORD (LOGIN) =====================
         [Authorize]
         [HttpPost("change-password")]
-        public IActionResult ChangePassword([FromBody] ChangePasswordRequest req)
+        public IActionResult ChangePassword(ChangePasswordRequest request)
         {
-            int userId = int.Parse(
-                User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            try
+            {
+                int userId = int.Parse(
+                    User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-            var success = bll.ChangePasswordWithOldPassword(
-                userId, req.OldPassword, req.NewPassword);
+                _userBusiness.ChangePassword(
+                    userId,
+                    request.OldPassword,
+                    request.NewPassword);
 
-            if (!success)
-                return BadRequest("Mật khẩu cũ không đúng");
-
-            return Ok("Đổi mật khẩu thành công");
+                return Ok(new
+                {
+                    success = true,
+                    message = "Đổi mật khẩu thành công"
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
         }
 
-        // ===================== FORGOT PASSWORD =====================
         [HttpPost("forgot-password")]
-        [AllowAnonymous]
-        public IActionResult ForgotPassword([FromBody] ForgotPasswordRequest req)
+        public IActionResult ForgotPassword(ForgotPasswordRequest request)
         {
-            var token = bll.CreateResetTokenByUsername(req.Username);
-            if (token == null)
-                return NotFound("User không tồn tại");
-
-            // Demo: trả token luôn (thực tế gửi email)
-            return Ok(new { resetToken = token });
+            try
+            {
+                var token = _userBusiness.ForgotPassword(request.Email);
+                return Ok(new
+                {
+                    success = true,
+                    message = "Đã tạo token reset mật khẩu",
+                    data = new
+                    {
+                        reset_token = token
+                    }
+                });
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
         }
 
-        // ===================== RESET PASSWORD =====================
         [HttpPost("reset-password")]
-        [AllowAnonymous]
-        public IActionResult ResetPassword([FromBody] ResetPasswordRequest req)
+        public IActionResult ResetPassword(ResetPasswordRequest request)
         {
-            var success = bll.ResetPasswordByToken(
-                req.Token, req.NewPassword);
+            try
+            {
+                _userBusiness.ResetPassword(
+                    request.ResetToken,
+                    request.NewPassword);
 
-            if (!success)
-                return BadRequest("Token không hợp lệ hoặc đã hết hạn");
-
-            return Ok("Reset mật khẩu thành công");
+                return Ok(new
+                {
+                    success = true,
+                    message = "Reset mật khẩu thành công"
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
         }
     }
 }
