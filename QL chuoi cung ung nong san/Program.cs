@@ -7,7 +7,9 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.SetMinimumLevel(LogLevel.Trace);
 // ------------------- Add Services -------------------
 
 // Controllers
@@ -90,6 +92,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             OnTokenValidated = context =>
             {
                 Console.WriteLine("JWT validated!");
+                foreach (var claim in context.Principal.Claims)
+                    Console.WriteLine($"Claim: {claim.Type} = {claim.Value}");
                 return Task.CompletedTask;
             }
         };
@@ -97,6 +101,23 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 // ------------------- Build app -------------------
 var app = builder.Build();
+app.Use(async (context, next) =>
+{
+    Console.WriteLine($"Incoming request: {context.Request.Method} {context.Request.Path}");
+
+    try
+    {
+        await next.Invoke();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Exception middleware caught: {ex}");
+        throw;
+    }
+
+    Console.WriteLine($"Outgoing response: {context.Response.StatusCode}");
+});
+
 
 // Swagger
 if (app.Environment.IsDevelopment())

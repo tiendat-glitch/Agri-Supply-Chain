@@ -254,10 +254,13 @@ BEGIN
         email,
         phone,
         role,
-        created_at
+        created_at,
+        password_reset_token,
+        password_reset_expiry
     FROM dbo.users
     WHERE id = @UserId;
 END
+
 --Lấy theo tên
 CREATE PROCEDURE SP_Login
     @Username NVARCHAR(100)
@@ -265,7 +268,7 @@ AS
 BEGIN
     SELECT *
     FROM users
-    WHERE username = @Username
+    WHERE username = @Username;
 END
 --Đăng ký user mới
 CREATE PROCEDURE SP_RegisterUser
@@ -399,7 +402,7 @@ END
 -- 1. USERS
 INSERT INTO dbo.users (username, password_hash, full_name, role, email)
 VALUES 
-('admin1','hashedpwd1','Admin One','admin','admin1@example.com'),
+('admin1','1','Admin One','admin','admin1@example.com'),
 ('farmer1','hashedpwd2','Farmer One','farmer','farmer1@example.com'),
 ('distributor1','hashedpwd3','Distributor One','distributor','dist1@example.com'),
 ('retailer1','hashedpwd4','Retailer One','retailer','retailer1@example.com'),

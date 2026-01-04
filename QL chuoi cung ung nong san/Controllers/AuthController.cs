@@ -122,13 +122,11 @@ namespace API_Auth.Controllers
         {
             try
             {
-                int userId = int.Parse(
-                    User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+                int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-                _userBusiness.ChangePassword(
-                    userId,
-                    request.OldPassword,
-                    request.NewPassword);
+                var user = _userBusiness.GetProfile(userId);
+
+                _userBusiness.ChangePassword(userId, request.OldPassword, request.NewPassword);
 
                 return Ok(new
                 {
@@ -145,6 +143,7 @@ namespace API_Auth.Controllers
                 });
             }
         }
+
 
         [HttpPost("forgot-password")]
         public IActionResult ForgotPassword(ForgotPasswordRequest request)

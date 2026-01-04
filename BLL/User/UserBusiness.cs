@@ -47,8 +47,11 @@ namespace BLL
         // đổi mk
         public void ChangePassword(int userId, string oldPassword, string newPassword)
         {
-            var user = _userRepo.GetUserById(userId)
-                       ?? throw new Exception("User không tồn tại");
+            var user = _userRepo.GetUserById(userId, includePassword: true)
+                ?? throw new Exception("User không tồn tại");
+
+            if (!string.IsNullOrEmpty(user.PasswordResetToken))
+                Console.WriteLine("Token reset tồn tại, sẽ check logic reset password");
 
             if (!BCrypt.Net.BCrypt.Verify(oldPassword, user.PasswordHash))
                 throw new Exception("Mật khẩu cũ không đúng");
@@ -56,6 +59,7 @@ namespace BLL
             string newHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
             _userRepo.UpdatePassword(userId, newHash);
         }
+
 
         // quên mk
         public string ForgotPassword(string email)
@@ -86,9 +90,9 @@ namespace BLL
         }
 
         // thông tin người dùng
-        public User GetProfile(int userId)
+        public User GetProfile(int userId, bool includePassword = false)
         {
-            return _userRepo.GetUserById(userId)
+            return _userRepo.GetUserById(userId, includePassword)
                    ?? throw new Exception("User không tồn tại");
         }
     }

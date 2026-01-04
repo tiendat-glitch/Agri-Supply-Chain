@@ -101,7 +101,7 @@ namespace DAL.Repositories
         }
 
         //Lấy thông tin người dùng theo Id
-        public User? GetUserById(int userId)
+        public User? GetUserById(int userId, bool includePassword = true)
         {
             using var conn = _dbHelper.GetConnection();
 
@@ -110,13 +110,13 @@ namespace DAL.Repositories
                 new SqlParameter("@UserId", userId)
             };
 
-            using var reader = _dbHelper.ExecuteStoredProcedure(
-                "GetUserById", conn, parameters);
+            using var reader = _dbHelper.ExecuteStoredProcedure("GetUserById", conn, parameters);
 
             if (!reader.Read()) return null;
 
-            return UserMapper.Map(reader, includePassword: false);
+            return UserMapper.Map(reader, includePassword);
         }
+
         //Đổi mk
         public int UpdatePassword(int userId, string newPasswordHash)
         {
