@@ -263,19 +263,9 @@ CREATE PROCEDURE SP_Login
     @Username NVARCHAR(100)
 AS
 BEGIN
-    SET NOCOUNT ON;
-
-    SELECT 
-        id,
-        username,
-        password_hash,
-        full_name,
-        email,
-        phone,
-        role,
-        created_at
-    FROM dbo.users
-    WHERE username = @Username;
+    SELECT *
+    FROM users
+    WHERE username = @Username
 END
 --Đăng ký user mới
 CREATE PROCEDURE SP_RegisterUser

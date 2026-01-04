@@ -20,10 +20,13 @@ namespace BLL
         public User Login(string username, string password)
         {
             var user = _userRepo.GetUserByUsername(username)
-                   ?? throw new Exception("User không tồn tại");
+            ?? throw new Exception("User không tồn tại");
 
-            // Kiểm tra mật khẩu
-            if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+            if (string.IsNullOrEmpty(user.PasswordHash))
+                throw new Exception("Mật khẩu chưa được đặt");
+          
+            bool valid = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
+            if (!valid)
                 throw new Exception("Sai mật khẩu");
 
             return user;

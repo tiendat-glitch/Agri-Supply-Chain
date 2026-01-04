@@ -13,12 +13,22 @@ var builder = WebApplication.CreateBuilder(args);
 // Controllers
 builder.Services.AddControllers();
 
+// Bind JWT settings từ appsettings.json và register vào DI
+builder.Services.Configure<JWTsetting>(builder.Configuration.GetSection("JWTsetting"));
+
+// JWT service
+builder.Services.AddScoped<JwtTokenService>();
+
+// Business layer
+builder.Services.AddScoped<UserBusiness>();
+
 // Swagger + JWT
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "API_Auth", Version = "v1" });
 
+    // JWT Bearer setup
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -45,8 +55,13 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// JWT Authentication
+// ------------------- JWT Authentication -------------------
+
+// Lấy config để cấu hình middleware
 var jwtConfig = builder.Configuration.GetSection("JWTsetting").Get<JWTsetting>();
+if (jwtConfig == null || string.IsNullOrEmpty(jwtConfig.Key))
+    throw new Exception("JWT Key is null! Check appsettings.json");
+
 var key = Encoding.UTF8.GetBytes(jwtConfig.Key);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -56,11 +71,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.SaveToken = true;
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,              
-            ValidateAudience = true,            
+            ValidateIssuer = true,
+            ValidateAudience = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtConfig.Issuer,  
-            ValidAudience = jwtConfig.Audience, 
+            ValidIssuer = jwtConfig.Issuer,
+            ValidAudience = jwtConfig.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(key)
         };
 
@@ -69,7 +84,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         {
             OnAuthenticationFailed = context =>
             {
-                Console.WriteLine($"JWT failed: {context.Exception.Message}");
+                Console.WriteLine($"JWT failed: {context.Exception}");
                 return Task.CompletedTask;
             },
             OnTokenValidated = context =>
@@ -80,11 +95,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddScoped<UserBusiness>();
-
-// JWT service
-builder.Services.AddScoped<JwtTokenService>();
-
+// ------------------- Build app -------------------
 var app = builder.Build();
 
 // Swagger
@@ -94,7 +105,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "API_Auth v1");
-        c.RoutePrefix = string.Empty;
+        c.RoutePrefix = "swagger";
     });
 }
 
