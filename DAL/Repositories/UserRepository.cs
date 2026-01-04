@@ -55,13 +55,14 @@ namespace DAL.Repositories
             using var reader = _dbHelper.ExecuteStoredProcedure("SP_Login", conn, parameters);
             if (!reader.Read()) return null;
 
-            var user = UserMapper.Map(reader);
-            user.PasswordResetToken = reader.IsDBNull(reader.GetOrdinal("password_reset_token")) ? null : reader.GetString(reader.GetOrdinal("password_reset_token"));
-            user.PasswordResetExpiry = reader.IsDBNull(reader.GetOrdinal("password_reset_expiry")) ? null : reader.GetDateTime(reader.GetOrdinal("password_reset_expiry"));
+            var user = UserMapper.Map(reader, includePassword: true);
+
+            // Check null
+            if (string.IsNullOrEmpty(user.PasswordHash))
+                throw new Exception("Mật khẩu chưa được đặt cho user này");
 
             return user;
         }
-
 
         //Đăng ký
         public int Register(User user)
@@ -110,7 +111,7 @@ namespace DAL.Repositories
             };
 
             using var reader = _dbHelper.ExecuteStoredProcedure(
-                "SP_GetUserById", conn, parameters);
+                "GetUserById", conn, parameters);
 
             if (!reader.Read()) return null;
 

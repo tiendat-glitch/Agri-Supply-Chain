@@ -28,9 +28,12 @@ namespace API_Auth.Controllers
         {
             try
             {
-                var user = _userBusiness.Login(
-                    request.Username,
-                    request.Password);
+                if (string.IsNullOrEmpty(request.Username))
+                    throw new Exception("Username không được để trống");
+                if (string.IsNullOrEmpty(request.Password))
+                    throw new Exception("Password không được để trống");
+
+                var user = _userBusiness.Login(request.Username, request.Password);
 
                 var token = _jwtService.GenerateToken(user);
 
@@ -58,10 +61,12 @@ namespace API_Auth.Controllers
                 return Unauthorized(new
                 {
                     success = false,
-                    message = ex.Message
+                    message = ex.Message,
+                    detail = ex.ToString() // stack trace đầy đủ
                 });
             }
         }
+
 
         [HttpPost("register")]
         public IActionResult Register(RegisterRequest request)

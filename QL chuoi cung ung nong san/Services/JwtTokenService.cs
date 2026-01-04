@@ -14,25 +14,23 @@ namespace API_Auth.Services
 
         public JwtTokenService(IOptions<JWTsetting> options)
         {
-            _jwt = options.Value;
+            _jwt = options.Value ?? throw new Exception("JWT settings not configured properly");
         }
 
         public string GenerateToken(User user)
         {
+            if (string.IsNullOrEmpty(_jwt.Key))
+                throw new Exception("JWT Key is null! Check appsettings.json and DI binding");
+
             var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.Role, user.Role)
-            };
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Name, user.Username),
+            new Claim(ClaimTypes.Role, user.Role)
+        };
 
-            var key = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(_jwt.Key)
-            );
-
-            var creds = new SigningCredentials(
-                key, SecurityAlgorithms.HmacSha256
-            );
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Key));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
                 issuer: _jwt.Issuer,
