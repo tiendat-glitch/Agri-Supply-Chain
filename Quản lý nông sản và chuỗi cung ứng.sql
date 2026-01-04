@@ -363,6 +363,27 @@ BEGIN
     WHERE password_reset_token = @ResetToken
       AND password_reset_expiry > SYSUTCDATETIME()
 END
+--reset token
+CREATE PROCEDURE SP_UpdateUser_ResetToken
+    @UserId INT,
+    @PasswordResetToken NVARCHAR(100) = NULL,
+    @PasswordResetExpiry DATETIME2 = NULL
+AS
+BEGIN
+    UPDATE users
+    SET 
+        password_reset_token = @PasswordResetToken,
+        password_reset_expiry = @PasswordResetExpiry
+    WHERE id = @UserId;
+END
+CREATE PROCEDURE SP_GetUserByEmail
+    @Email NVARCHAR(255)
+AS
+BEGIN
+    SELECT TOP 1 *
+    FROM dbo.users
+    WHERE email = @Email
+END
 
 
 

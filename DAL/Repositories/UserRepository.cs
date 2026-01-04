@@ -47,19 +47,22 @@ namespace DAL.Repositories
         public User? GetUserByUsername(string username)
         {
             using var conn = _dbHelper.GetConnection();
-
             var parameters = new List<SqlParameter>
             {
                 new SqlParameter("@Username", username)
             };
 
-            using var reader = _dbHelper.ExecuteStoredProcedure(
-                "SP_Login", conn, parameters);
-
+            using var reader = _dbHelper.ExecuteStoredProcedure("SP_Login", conn, parameters);
             if (!reader.Read()) return null;
 
-            return UserMapper.Map(reader);
+            var user = UserMapper.Map(reader);
+            user.PasswordResetToken = reader.IsDBNull(reader.GetOrdinal("password_reset_token")) ? null : reader.GetString(reader.GetOrdinal("password_reset_token"));
+            user.PasswordResetExpiry = reader.IsDBNull(reader.GetOrdinal("password_reset_expiry")) ? null : reader.GetDateTime(reader.GetOrdinal("password_reset_expiry"));
+
+            return user;
         }
+
+
         //Đăng ký
         public int Register(User user)
         {
@@ -78,6 +81,24 @@ namespace DAL.Repositories
             return _dbHelper.ExecuteNonQueryStoredProcedure(
                 "SP_RegisterUser", conn, parameters);
         }
+        //
+        public User? GetUserByEmail(string email)
+        {
+            using var conn = _dbHelper.GetConnection();
+
+            var parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@Email", email)
+            };
+
+            using var reader = _dbHelper.ExecuteStoredProcedure(
+                "SP_GetUserByEmail", conn, parameters);
+
+            if (!reader.Read()) return null;
+
+            return UserMapper.Map(reader);
+        }
+
         //Lấy thông tin người dùng theo Id
         public User? GetUserById(int userId)
         {
@@ -110,33 +131,28 @@ namespace DAL.Repositories
                 "SP_ChangePassword", conn, parameters);
         }
         //Quên mk
-        public int SetPasswordResetToken(string email, string token, DateTime expiry)
+        public void SetPasswordResetToken(int userId, string token, DateTime expiry)
         {
             using var conn = _dbHelper.GetConnection();
-
             var parameters = new List<SqlParameter>
             {
-                new SqlParameter("@Email", email),
-                new SqlParameter("@ResetToken", token),
-                new SqlParameter("@Expiry", expiry)
+                new SqlParameter("@UserId", userId),
+                new SqlParameter("@PasswordResetToken", token),
+                new SqlParameter("@PasswordResetExpiry", expiry)
             };
-
-            return _dbHelper.ExecuteNonQueryStoredProcedure(
-                "SP_SetPasswordResetToken", conn, parameters);
+            _dbHelper.ExecuteStoredProcedure("SP_UpdateUser_ResetToken", conn, parameters);
         }
+
         //Reset mật khẩu = token
-        public int ResetPassword(string resetToken, string newPasswordHash)
+        public int ResetPassword(string token, string newPasswordHash)
         {
             using var conn = _dbHelper.GetConnection();
-
             var parameters = new List<SqlParameter>
             {
-                new SqlParameter("@ResetToken", resetToken),
+                new SqlParameter("@ResetToken", token),
                 new SqlParameter("@NewPasswordHash", newPasswordHash)
             };
-
-            return _dbHelper.ExecuteNonQueryStoredProcedure(
-                "SP_ResetPassword", conn, parameters);
+            return _dbHelper.ExecuteNonQueryStoredProcedure("SP_ResetPassword", conn, parameters);
         }
     }
 }
