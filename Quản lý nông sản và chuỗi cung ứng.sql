@@ -390,15 +390,6 @@ END
 
 
 
-
-
-
-
-
-
-
-
-
 -- 1. USERS
 INSERT INTO dbo.users (username, password_hash, full_name, role, email)
 VALUES 

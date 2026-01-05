@@ -1,4 +1,5 @@
-﻿using API_Adm.DTO;
+﻿using BLL;
+using BLL.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -7,7 +8,7 @@ namespace API_Adm.Controllers
 {
     [ApiController]
     [Route("api/admin/batch")]
-    
+    [Authorize(Roles = "admin")]
     public class BatchController : ControllerBase
     {
         private readonly string _connectionString;
@@ -86,91 +87,6 @@ namespace API_Adm.Controllers
             return Ok(new { success = true, data = batch });
         }
 
-        // POST create batch
-        [HttpPost]
-        public async Task<IActionResult> CreateBatch([FromBody] CreateBatchRequest request)
-        {
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-
-            var sql = @"
-                INSERT INTO batches
-                (batch_code, product_id, farm_id, created_by_user_id, harvest_date, quantity, unit, expiry_date, status, created_at)
-                VALUES
-                (@BatchCode, @ProductId, @FarmId, @CreatedByUserId, @HarvestDate, @Quantity, @Unit, @ExpiryDate, @Status, GETDATE());
-                SELECT SCOPE_IDENTITY();";
-
-            using var command = new SqlCommand(sql, connection);
-            command.Parameters.AddWithValue("@BatchCode", request.BatchCode);
-            command.Parameters.AddWithValue("@ProductId", request.ProductId);
-            command.Parameters.AddWithValue("@FarmId", request.FarmId);
-            command.Parameters.AddWithValue("@CreatedByUserId", (object?)request.CreatedByUserId ?? DBNull.Value);
-            command.Parameters.AddWithValue("@HarvestDate", (object?)request.HarvestDate ?? DBNull.Value);
-            command.Parameters.AddWithValue("@Quantity", (object?)request.Quantity ?? DBNull.Value);
-            command.Parameters.AddWithValue("@Unit", (object?)request.Unit ?? DBNull.Value);
-            command.Parameters.AddWithValue("@ExpiryDate", (object?)request.ExpiryDate ?? DBNull.Value);
-            command.Parameters.AddWithValue("@Status", (object?)request.Status ?? "pending");
-
-            var batchId = Convert.ToInt32(await command.ExecuteScalarAsync());
-
-            return Ok(new { success = true, message = "Batch created", batchId });
-        }
-
-        // PUT update batch
-        [HttpPut("{id:int}")]
-        public async Task<IActionResult> UpdateBatch(int id, [FromBody] UpdateBatchRequest request)
-        {
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-
-            var sql = @"
-                UPDATE batches
-                SET batch_code = COALESCE(@BatchCode, batch_code),
-                    product_id = COALESCE(@ProductId, product_id),
-                    farm_id = COALESCE(@FarmId, farm_id),
-                    created_by_user_id = COALESCE(@CreatedByUserId, created_by_user_id),
-                    harvest_date = COALESCE(@HarvestDate, harvest_date),
-                    quantity = COALESCE(@Quantity, quantity),
-                    unit = COALESCE(@Unit, unit),
-                    expiry_date = COALESCE(@ExpiryDate, expiry_date),
-                    status = COALESCE(@Status, status)
-                WHERE id = @id";
-
-            using var command = new SqlCommand(sql, connection);
-            command.Parameters.AddWithValue("@BatchCode", (object?)request.BatchCode ?? DBNull.Value);
-            command.Parameters.AddWithValue("@ProductId", (object?)request.ProductId ?? DBNull.Value);
-            command.Parameters.AddWithValue("@FarmId", (object?)request.FarmId ?? DBNull.Value);
-            command.Parameters.AddWithValue("@CreatedByUserId", (object?)request.CreatedByUserId ?? DBNull.Value);
-            command.Parameters.AddWithValue("@HarvestDate", (object?)request.HarvestDate ?? DBNull.Value);
-            command.Parameters.AddWithValue("@Quantity", (object?)request.Quantity ?? DBNull.Value);
-            command.Parameters.AddWithValue("@Unit", (object?)request.Unit ?? DBNull.Value);
-            command.Parameters.AddWithValue("@ExpiryDate", (object?)request.ExpiryDate ?? DBNull.Value);
-            command.Parameters.AddWithValue("@Status", (object?)request.Status ?? DBNull.Value);
-            command.Parameters.AddWithValue("@id", id);
-
-            var rowsAffected = await command.ExecuteNonQueryAsync();
-            if (rowsAffected == 0)
-                return NotFound(new { success = false, message = "Batch not found" });
-
-            return Ok(new { success = true, message = "Batch updated" });
-        }
-
-        // DELETE batch
-        [HttpDelete("{id:int}")]
-        public async Task<IActionResult> DeleteBatch(int id)
-        {
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-
-            var sql = @"DELETE FROM batches WHERE id = @id";
-            using var command = new SqlCommand(sql, connection);
-            command.Parameters.AddWithValue("@id", id);
-
-            var rowsAffected = await command.ExecuteNonQueryAsync();
-            if (rowsAffected == 0)
-                return NotFound(new { success = false, message = "Batch not found" });
-
-            return Ok(new { success = true, message = "Batch deleted" });
-        }
+        
     }
 }

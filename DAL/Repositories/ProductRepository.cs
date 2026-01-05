@@ -40,5 +40,28 @@ namespace DAL.Repositories
             }
             return list;
         }
+
+        public Product? GetById(int id)
+        {
+            using SqlConnection conn = _dbHelper.GetConnection();
+            const string query = @"
+                SELECT id, name, sku, category, storage_instructions, typical_shelf_life_days, created_at
+                FROM dbo.products
+                WHERE id = @Id";
+            using SqlCommand cmd = new SqlCommand(query, conn);
+            cmd.Parameters.AddWithValue("@Id", id);
+            using SqlDataReader reader = cmd.ExecuteReader();
+            if (!reader.Read()) return null;
+            return new Product
+            {
+                Id = Convert.ToInt32(reader["id"]),
+                Name = reader["name"].ToString(),
+                Sku = reader["sku"]?.ToString(),
+                Category = reader["category"]?.ToString(),
+                StorageInstructions = reader["storage_instructions"]?.ToString(),
+                TypicalShelfLifeDays = reader["typical_shelf_life_days"] as int?,
+                CreatedAt = Convert.ToDateTime(reader["created_at"])
+            };
+        }
     }
 }

@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "API_QR": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:64744;http://localhost:64745"
+    }
+  }
+}

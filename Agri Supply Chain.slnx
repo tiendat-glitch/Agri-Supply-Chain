@@ -1,7 +1,4 @@
 <Solution>
-  <Folder Name="/API_Auth/">
-    <Project Path="QL chuoi cung ung nong san/API_Auth.csproj" />
-  </Folder>
   <Folder Name="/BLL/">
     <Project Path="BLL/BLL.csproj" Id="160fe750-4af5-4999-8062-ff8f3f42b494" />
   </Folder>
@@ -11,6 +8,13 @@
   <Folder Name="/Model/">
     <Project Path="Model/Model.csproj" Id="3783743a-1478-48a4-a05e-2f36f3e93989" />
   </Folder>
-  <Project Path="API_Adm/API_Adm.csproj" Id="4d3f8664-336e-468c-9e24-0fbf5fa0ab55" />
+  <Project Path="API_Adm/API_Admin.csproj" />
+  <Project Path="API_Auth/API_Auth.csproj" />
+  <Project Path="API_Farmer/API_Farmer.csproj" Id="142c7f1d-3af7-4759-8fc9-a8394f1437b6" />
   <Project Path="API_Gateway/API_Gateway.csproj" Id="5f342453-fdc4-46cd-8c10-c6a2becb0f98" />
+  <Project Path="API_Inspection/API_Inspection.csproj" />
+  <Project Path="API_QR/API_QR.csproj" />
+  <Project Path="API_Shipment/API_Shipment.csproj" />
+  <Project Path="API_User/API_User.csproj" Id="1754d792-a7a7-464c-98a4-c7aa66de5c79" />
+  <Project Path="API_Warehouse/API_Warehouse.csproj" />
 </Solution>
