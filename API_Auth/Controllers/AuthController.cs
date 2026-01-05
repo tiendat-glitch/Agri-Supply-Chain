@@ -101,22 +101,6 @@ namespace API_Auth.Controllers
         }
 
         [Authorize]
-        [HttpGet("me")]
-        public IActionResult Me()
-        {
-            int userId = int.Parse(
-                User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
-            var user = _userBusiness.GetProfile(userId);
-
-            return Ok(new
-            {
-                success = true,
-                data = user
-            });
-        }
-
-        [Authorize]
         [HttpPost("change-password")]
         public IActionResult ChangePassword(ChangePasswordRequest request)
         {
@@ -124,7 +108,7 @@ namespace API_Auth.Controllers
             {
                 int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-                var user = _userBusiness.GetProfile(userId);
+                var user = _userBusiness.GetUser(userId);
 
                 _userBusiness.ChangePassword(userId, request.OldPassword, request.NewPassword);
 
