@@ -90,7 +90,7 @@ namespace BLL
         }
 
         // thông tin người dùng
-        public User GetProfile(int userId, bool includePassword = false)
+        public User GetUser(int userId, bool includePassword = false)
         {
             return _userRepo.GetUserById(userId, includePassword)
                    ?? throw new Exception("User không tồn tại");
