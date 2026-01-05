@@ -57,6 +57,7 @@ namespace DAL.Repositories
 
             var user = UserMapper.Map(reader, includePassword: true);
 
+            // Check null
             if (string.IsNullOrEmpty(user.PasswordHash))
                 throw new Exception("Mật khẩu chưa được đặt cho user này");
 
