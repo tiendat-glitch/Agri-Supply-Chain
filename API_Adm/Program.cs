@@ -1,6 +1,7 @@
-using API_Adm.Settings;
+﻿using API_Adm.Settings;
 using BLL;
 using DAL.Helper;
+using DAL.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -8,14 +9,61 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+
+// Controllers
 builder.Services.AddControllers();
+
+// Database + Repository + BLL
+var cs = builder.Configuration.GetConnectionString("DefaultConnection")
+         ?? throw new Exception("Missing DefaultConnection in API_Adm");
+
+// DatabaseHelper
+builder.Services.AddSingleton(new DatabaseHelper(cs));
+
+// Repositories
+builder.Services.AddScoped<FarmRepository>();
+builder.Services.AddScoped<UserRepository>();
+builder.Services.AddScoped<AuditLogRepository>();
+builder.Services.AddScoped<InspectionRepository>();
+
+// BLL
+builder.Services.AddScoped<FarmBusiness>();
+builder.Services.AddScoped<UserProfileBusiness>();
+builder.Services.AddScoped<AuditLogBusiness>();
+builder.Services.AddScoped<InspectionBusiness>();
+
+// JWT Authentication
+builder.Services.Configure<JWTsetting>(builder.Configuration.GetSection("JWTsetting"));
+var jwt = builder.Configuration.GetSection("JWTsetting").Get<JWTsetting>()
+          ?? throw new Exception("JWTsetting chưa được cấu hình đúng");
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.RequireHttpsMetadata = false; // chỉ dev
+        options.SaveToken = true;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwt.Issuer,
+            ValidAudience = jwt.Audience,
+            IssuerSigningKey =
+                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+builder.Services.AddAuthorization();
+
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "API_Adm", Version = "v1" });
+    c.SwaggerDoc("v1",
+        new OpenApiInfo { Title = "API_Admin", Version = "v1", Description = "Quản lý Admin" });
 
-    // Cấu hình Swagger dùng Bearer JWT giống API_Auth/API_User
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -42,58 +90,21 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Bind JWT settings
-builder.Services.Configure<JWTsetting>(builder.Configuration.GetSection("JWTsetting"));
-
-var jwt = builder.Configuration.GetSection("JWTsetting").Get<JWTsetting>();
-if (jwt == null || string.IsNullOrEmpty(jwt.Key))
-    throw new Exception("JWTsetting chưa được cấu hình đúng trong appsettings.json của API_Adm");
-
-// DatabaseHelper + BLL cho admin dùng chung
-var cs = builder.Configuration.GetConnectionString("DefaultConnection")
-         ?? throw new Exception("Missing DefaultConnection in API_Adm");
-builder.Services.AddSingleton(new DatabaseHelper(cs));
-builder.Services.AddScoped<FarmBusiness>();
-builder.Services.AddScoped<BatchBusiness>();
-builder.Services.AddScoped<AuditLogBusiness>();
-
-// Authentication + Authorization
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.RequireHttpsMetadata = false;
-        options.SaveToken = true;
-
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = jwt.Issuer,
-            ValidAudience = jwt.Audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
-            ClockSkew = TimeSpan.Zero
-        };
-    });
-
-builder.Services.AddAuthorization();
-
+// Build App
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "API_Adm v1");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "API_Admin v1");
         c.RoutePrefix = "swagger";
     });
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthentication();
 app.UseAuthorization();
 

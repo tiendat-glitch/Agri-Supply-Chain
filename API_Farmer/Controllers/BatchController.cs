@@ -7,8 +7,8 @@ using System.Security.Claims;
 namespace API_Farmer.Controllers
 {
     [ApiController]
-    [Route("api/batch")]
-    [Authorize(Roles = "farmer,admin")]
+    [Route("api/farmer/batch")]
+    [Authorize(Roles = "farmer")]
     public class BatchesController : ControllerBase
     {
         private readonly BatchBusiness _batchBusiness;

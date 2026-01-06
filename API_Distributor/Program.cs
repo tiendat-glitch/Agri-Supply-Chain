@@ -1,50 +1,52 @@
-﻿using API_Farmer.Settings;
+using API_Distributor.Settings;
 using BLL;
 using DAL.Helper;
 using DAL.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// =======================
 // Controllers
+// =======================
 builder.Services.AddControllers();
 
+// =======================
 // Database + Repository + BLL
+// =======================
 var cs = builder.Configuration.GetConnectionString("DefaultConnection")
-         ?? throw new Exception("Missing DefaultConnection in API_Farmer");
+         ?? throw new Exception("Missing DefaultConnection in API_Adm");
 
+// DatabaseHelper
 builder.Services.AddSingleton(new DatabaseHelper(cs));
 
-// Repository
-builder.Services.AddScoped<ProductRepository>();
-builder.Services.AddScoped<FarmRepository>();
-builder.Services.AddScoped<BatchRepository>();  
-builder.Services.AddScoped<AuditLogRepository>();
-builder.Services.AddScoped<WarehouseRepository>();
+// Repositories
+builder.Services.AddScoped<BatchRepository>();
 builder.Services.AddScoped<ShipmentRepository>();
-builder.Services.AddScoped<InspectionRepository>();
-
+builder.Services.AddScoped<WarehouseRepository>();
+builder.Services.AddScoped<WarehouseStockRepository>();
+builder.Services.AddScoped<ShipmentItemRepository>();
 // BLL
-builder.Services.AddScoped<bll_Product>();
-builder.Services.AddScoped<FarmBusiness>();
-builder.Services.AddScoped<BatchBusiness>();   
-builder.Services.AddScoped<AuditLogBusiness>();
-builder.Services.AddScoped<WarehouseBusiness>();
+builder.Services.AddScoped<BatchBusiness>();
 builder.Services.AddScoped<ShipmentBusiness>();
-builder.Services.AddScoped<InspectionBusiness>();
+builder.Services.AddScoped<WarehouseBusiness>();
 
+
+// =======================
 // JWT Authentication
+// =======================
 builder.Services.Configure<JWTsetting>(builder.Configuration.GetSection("JWTsetting"));
 var jwt = builder.Configuration.GetSection("JWTsetting").Get<JWTsetting>()
-          ?? throw new Exception("JWTsetting chưa cấu hình đúng");
+          ?? throw new Exception("JWTsetting ch?a ???c c?u h�nh ?�ng");
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.RequireHttpsMetadata = false;
+        options.RequireHttpsMetadata = false; // ch? dev
         options.SaveToken = true;
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -61,12 +63,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization();
 
+// =======================
 // Swagger
+// =======================
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1",
-        new OpenApiInfo { Title = "API_Farmer", Version = "v1" });
+        new OpenApiInfo { Title = "API_Distributor", Version = "v1", Description = "Qu?n l� Admin" });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -75,7 +79,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Nhập: Bearer {token}"
+        Description = "Nh?p: Bearer {token}"
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -94,19 +98,28 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+// =======================
 // Build App
+// =======================
 var app = builder.Build();
 
+// =======================
 // Middleware
+// =======================
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "API_Distributor v1");
+        c.RoutePrefix = "swagger";
+    });
 }
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();

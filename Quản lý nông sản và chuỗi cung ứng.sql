@@ -493,3 +493,4 @@ VALUES
 (9,'QR-TOM-001','https://example.com/qr/BATCH-TOM-001'),
 (10,'QR-LET-001','https://example.com/qr/BATCH-LET-001');
 GO
+

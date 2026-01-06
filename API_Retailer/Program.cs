@@ -1,4 +1,4 @@
-﻿using API_Farmer.Settings;
+using API_Retailer.Settings;
 using BLL;
 using DAL.Helper;
 using DAL.Repositories;
@@ -19,27 +19,18 @@ var cs = builder.Configuration.GetConnectionString("DefaultConnection")
 builder.Services.AddSingleton(new DatabaseHelper(cs));
 
 // Repository
-builder.Services.AddScoped<ProductRepository>();
-builder.Services.AddScoped<FarmRepository>();
-builder.Services.AddScoped<BatchRepository>();  
-builder.Services.AddScoped<AuditLogRepository>();
-builder.Services.AddScoped<WarehouseRepository>();
+builder.Services.AddScoped<BatchRepository>();
 builder.Services.AddScoped<ShipmentRepository>();
-builder.Services.AddScoped<InspectionRepository>();
 
 // BLL
-builder.Services.AddScoped<bll_Product>();
-builder.Services.AddScoped<FarmBusiness>();
-builder.Services.AddScoped<BatchBusiness>();   
-builder.Services.AddScoped<AuditLogBusiness>();
-builder.Services.AddScoped<WarehouseBusiness>();
+builder.Services.AddScoped<BatchBusiness>();
 builder.Services.AddScoped<ShipmentBusiness>();
-builder.Services.AddScoped<InspectionBusiness>();
+
 
 // JWT Authentication
 builder.Services.Configure<JWTsetting>(builder.Configuration.GetSection("JWTsetting"));
 var jwt = builder.Configuration.GetSection("JWTsetting").Get<JWTsetting>()
-          ?? throw new Exception("JWTsetting chưa cấu hình đúng");
+          ?? throw new Exception("JWTsetting ch?a c?u h�nh ?�ng");
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -66,7 +57,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1",
-        new OpenApiInfo { Title = "API_Farmer", Version = "v1" });
+        new OpenApiInfo { Title = "API_Retailor", Version = "v1" });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -75,7 +66,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Nhập: Bearer {token}"
+        Description = "Nh?p: Bearer {token}"
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
