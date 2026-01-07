@@ -65,7 +65,7 @@ namespace DAL.Repositories
             const string sql = @"
                 SELECT 
                     b.id, b.batch_code, b.harvest_date, b.expiry_date,
-                    b.status, b.created_at,
+                    b.status, b.created_at, b.created_by_user_id, b.quantity, b.unit, b.product_id,
                     p.id AS product_id, p.name AS product_name
                 FROM dbo.batches b
                 INNER JOIN dbo.products p ON b.product_id = p.id
@@ -89,6 +89,20 @@ namespace DAL.Repositories
                     : DateOnly.FromDateTime((DateTime)reader["expiry_date"]),
                 Status = reader["status"].ToString()!,
                 CreatedAt = (DateTime)reader["created_at"],
+
+                CreatedByUserId = reader["created_by_user_id"] == DBNull.Value
+                    ? null
+                    : (int?)reader["created_by_user_id"],
+
+                Quantity = reader["quantity"] == DBNull.Value
+                    ? null
+                    : (decimal?)reader["quantity"],
+
+                Unit = reader["unit"] == DBNull.Value
+                    ? null
+                    : reader["unit"].ToString(),
+
+                ProductId = (int)reader["product_id"],
 
                 Product = new Product
                 {
@@ -416,28 +430,6 @@ namespace DAL.Repositories
             }
 
             return ok;
-        }
-
-        private static Batch Map(SqlDataReader reader)
-        {
-            return new Batch
-            {
-                Id = (int)reader["id"],
-                BatchCode = reader["batch_code"].ToString()!,
-                ProductId = (int)reader["product_id"],
-                FarmId = (int)reader["farm_id"],
-                CreatedByUserId = reader["created_by_user_id"] as int?,
-                HarvestDate = reader["harvest_date"] == DBNull.Value
-                    ? null
-                    : DateOnly.FromDateTime((DateTime)reader["harvest_date"]),
-                Quantity = reader["quantity"] as decimal?,
-                Unit = reader["unit"]?.ToString(),
-                ExpiryDate = reader["expiry_date"] == DBNull.Value
-                    ? null
-                    : DateOnly.FromDateTime((DateTime)reader["expiry_date"]),
-                Status = reader["status"].ToString()!,
-                CreatedAt = (DateTime)reader["created_at"]
-            };
         }
     }
 }

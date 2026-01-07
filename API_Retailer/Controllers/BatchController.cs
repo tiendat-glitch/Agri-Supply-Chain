@@ -53,7 +53,6 @@ namespace API_Retailer.Controllers
                 ExpiryDate = batch.ExpiryDate?.ToDateTime(TimeOnly.MinValue),
                 Status = batch.Status,
 
-                // Chỗ mở rộng farm + inspections sau này
                 Source = null!
             };
 
