@@ -1,5 +1,6 @@
 using API_Retailer.Settings;
 using BLL;
+using BLL.Retailer;
 using DAL.Helper;
 using DAL.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -10,8 +11,12 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // Controllers
-builder.Services.AddControllers();
-
+builder.Services.AddControllers()
+    .AddJsonOptions(opt =>
+    {
+        opt.JsonSerializerOptions.DefaultIgnoreCondition =
+            System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+    });
 // Database + Repository + BLL
 var cs = builder.Configuration.GetConnectionString("DefaultConnection")
          ?? throw new Exception("Missing DefaultConnection in API_Farmer");
@@ -20,17 +25,13 @@ builder.Services.AddSingleton(new DatabaseHelper(cs));
 
 // Repository
 builder.Services.AddScoped<BatchRepository>();
-builder.Services.AddScoped<ShipmentRepository>();
-
 // BLL
-builder.Services.AddScoped<BatchBusiness>();
-builder.Services.AddScoped<ShipmentBusiness>();
-
+builder.Services.AddScoped<RetailerBatchBusiness>();
 
 // JWT Authentication
 builder.Services.Configure<JWTsetting>(builder.Configuration.GetSection("JWTsetting"));
 var jwt = builder.Configuration.GetSection("JWTsetting").Get<JWTsetting>()
-          ?? throw new Exception("JWTsetting ch?a c?u hình ?úng");
+          ?? throw new Exception("JWTsetting chua cau hinh dung");
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -66,7 +67,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Nh?p: Bearer {token}"
+        Description = "Nhap: Bearer {token}"
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement

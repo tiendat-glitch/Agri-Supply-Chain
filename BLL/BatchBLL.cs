@@ -66,35 +66,58 @@ namespace BLL
 
         public bool Update(int id, UpdateBatchDto dto, int? currentUserId = null)
         {
-            var existing = _repo.GetById(id) ?? throw new Exception("Batch không tồn tại");
-            var oldValue = existing;
+            var existing = _repo.GetById(id)
+                ?? throw new Exception("Batch không tồn tại");
+
+            var oldValue = new Batch
+            {
+                Id = existing.Id,
+                BatchCode = existing.BatchCode,
+                ProductId = existing.ProductId,
+                FarmId = existing.FarmId,
+                CreatedByUserId = existing.CreatedByUserId,
+                HarvestDate = existing.HarvestDate,
+                Quantity = existing.Quantity,
+                Unit = existing.Unit,
+                ExpiryDate = existing.ExpiryDate,
+                Status = existing.Status,
+                CreatedAt = existing.CreatedAt
+            };
 
             if (!string.IsNullOrWhiteSpace(dto.BatchCode))
                 existing.BatchCode = dto.BatchCode;
+
             if (dto.ProductId.HasValue)
                 existing.ProductId = dto.ProductId.Value;
+
             if (dto.FarmId.HasValue)
                 existing.FarmId = dto.FarmId.Value;
+
             if (dto.CreatedByUserId.HasValue)
                 existing.CreatedByUserId = dto.CreatedByUserId.Value;
+
             if (dto.HarvestDate.HasValue)
                 existing.HarvestDate = DateOnly.FromDateTime(dto.HarvestDate.Value);
+
             if (dto.Quantity.HasValue)
                 existing.Quantity = dto.Quantity.Value;
+
             if (!string.IsNullOrWhiteSpace(dto.Unit))
                 existing.Unit = dto.Unit;
+
             if (dto.ExpiryDate.HasValue)
                 existing.ExpiryDate = DateOnly.FromDateTime(dto.ExpiryDate.Value);
+
             if (!string.IsNullOrWhiteSpace(dto.Status))
                 existing.Status = dto.Status;
 
-            var ok = _repo.Update(id, existing);
+            var ok = _repo.Update(existing);
 
             if (ok)
             {
                 _auditBusiness.WriteLog(
                     userId: currentUserId,
-                    action: "Update",
+                    action: "UPDATE",
                     tableName: "batches",
                     rowId: id.ToString(),
                     oldValue: oldValue,
@@ -104,6 +127,7 @@ namespace BLL
 
             return ok;
         }
+
         public bool Delete(int id, int? currentUserId = null)
         {
             var existing = _repo.GetById(id);

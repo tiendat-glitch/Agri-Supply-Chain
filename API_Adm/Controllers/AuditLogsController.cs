@@ -17,10 +17,6 @@ namespace API_Adm.Controllers
             _business = business;
         }
 
-        /// <summary>
-        /// L?y audit log theo filter (có th? không truy?n gì ?? l?y t?t c?)
-        /// GET /api/admin/audit-logs?userId=1&tableName=batches&action=CREATE
-        /// </summary>
         [HttpGet]
         public ActionResult<List<AuditLogDTO>> Get(
             [FromQuery] int? userId,
@@ -38,18 +34,14 @@ namespace API_Adm.Controllers
                 To = to
             };
 
-            var logs = _business.GetLogs(filter); // N?u t?t c? null ? l?y t?t c?
+            var logs = _business.GetLogs(filter);
             return Ok(logs);
         }
 
-        /// <summary>
-        /// L?y t?t c? audit log (không c?n truy?n gì)
-        /// GET /api/admin/audit-logs/all
-        /// </summary>
         [HttpGet("all")]
         public ActionResult<List<AuditLogDTO>> GetAll()
         {
-            var filter = new AuditLogFilterDto(); // r?ng ? l?y toàn b?
+            var filter = new AuditLogFilterDto(); 
             var logs = _business.GetLogs(filter);
             return Ok(logs);
         }

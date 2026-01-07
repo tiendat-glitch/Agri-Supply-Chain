@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Text;
 
 namespace DAL.Helper
 {
@@ -15,7 +14,8 @@ namespace DAL.Helper
             _connectionString = connectionString;
         }
 
-        // Lấy SqlConnection đã mở
+        // ================= EXISTING =================
+
         public SqlConnection GetConnection()
         {
             var conn = new SqlConnection(_connectionString);
@@ -23,13 +23,11 @@ namespace DAL.Helper
             return conn;
         }
 
-        // Thực thi Stored Procedure và trả về SqlDataReader
         public SqlDataReader ExecuteStoredProcedure(
             string procedureName,
             SqlConnection conn,
             List<SqlParameter>? parameters = null)
         {
-            // KHÔNG dùng "using" ở đây vì Cmd sẽ bị dispose trước DataReader → lỗi
             var cmd = new SqlCommand(procedureName, conn)
             {
                 CommandType = CommandType.StoredProcedure
@@ -39,10 +37,8 @@ namespace DAL.Helper
                 cmd.Parameters.AddRange(parameters.ToArray());
 
             return cmd.ExecuteReader(CommandBehavior.CloseConnection);
-            // Reader đóng → Connection tự đóng
         }
 
-        // Stored Procedure không trả về dữ liệu
         public int ExecuteNonQueryStoredProcedure(
             string procedureName,
             SqlConnection conn,
@@ -59,7 +55,6 @@ namespace DAL.Helper
             return cmd.ExecuteNonQuery();
         }
 
-        // Stored Procedure trả về DataTable
         public DataTable ExecuteDataTableStoredProcedure(
             string procedureName,
             List<SqlParameter>? parameters = null)
@@ -75,10 +70,42 @@ namespace DAL.Helper
 
             using var da = new SqlDataAdapter(cmd);
             var dt = new DataTable();
-
             da.Fill(dt);
 
             return dt;
+        }
+
+        public object? ExecuteScalar(
+            string sql,
+            List<SqlParameter>? parameters = null)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(sql, conn)
+            {
+                CommandType = CommandType.Text
+            };
+
+            if (parameters != null)
+                cmd.Parameters.AddRange(parameters.ToArray());
+
+            conn.Open();
+            return cmd.ExecuteScalar();
+        }
+
+        public SqlDataReader ExecuteReaderText(
+            string sql,
+            SqlConnection conn,
+            List<SqlParameter>? parameters = null)
+        {
+            var cmd = new SqlCommand(sql, conn)
+            {
+                CommandType = CommandType.Text
+            };
+
+            if (parameters != null)
+                cmd.Parameters.AddRange(parameters.ToArray());
+
+            return cmd.ExecuteReader(CommandBehavior.CloseConnection);
         }
     }
 }

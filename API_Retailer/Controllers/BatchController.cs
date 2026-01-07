@@ -1,92 +1,141 @@
-﻿using BLL;
-using BLL.DTO;
+﻿using API_Retailer.DTOs.Batch;
+using API_Retailer.DTOs.Qr;
+using API_Retailer.DTOs.Signature;
+using BLL.Retailer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+using System.Security.Claims;
 
-namespace API_Adm.Controllers
+namespace API_Retailer.Controllers
 {
     [ApiController]
-    [Route("api/retailer/batch")]
+    [Route("api/retailer/batches")]
     [Authorize(Roles = "retailer")]
     public class BatchController : ControllerBase
     {
-        private readonly string _connectionString;
+        private readonly RetailerBatchBusiness _business;
 
-        public BatchController(IConfiguration configuration)
+        public BatchController(RetailerBatchBusiness business)
         {
-            _connectionString = configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException("Missing connection string 'DefaultConnection'");
+            _business = business;
         }
 
-        // GET all batches
+        // GET api/retailer/batches
         [HttpGet]
-        public async Task<IActionResult> GetAllBatches()
+        public IActionResult GetAll()
         {
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-
-            var sql = @"SELECT id, batch_code, product_id, farm_id, created_by_user_id, harvest_date, quantity, unit, expiry_date, status, created_at
-                        FROM batches";
-            using var command = new SqlCommand(sql, connection);
-            using var reader = await command.ExecuteReaderAsync();
-
-            var batches = new List<object>();
-            while (await reader.ReadAsync())
+            var batches = _business.GetAllBatches();
+            var dtoList = batches.Select(b => new RetailerBatchListDto
             {
-                batches.Add(new
-                {
-                    Id = reader.GetInt32(reader.GetOrdinal("id")),
-                    BatchCode = reader.GetString(reader.GetOrdinal("batch_code")),
-                    ProductId = reader.GetInt32(reader.GetOrdinal("product_id")),
-                    FarmId = reader.GetInt32(reader.GetOrdinal("farm_id")),
-                    CreatedByUserId = reader.IsDBNull(reader.GetOrdinal("created_by_user_id")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("created_by_user_id")),
-                    HarvestDate = reader.IsDBNull(reader.GetOrdinal("harvest_date")) ? (DateTime?)null : reader.GetDateTime(reader.GetOrdinal("harvest_date")),
-                    Quantity = reader.IsDBNull(reader.GetOrdinal("quantity")) ? (decimal?)null : reader.GetDecimal(reader.GetOrdinal("quantity")),
-                    Unit = reader.IsDBNull(reader.GetOrdinal("unit")) ? null : reader.GetString(reader.GetOrdinal("unit")),
-                    ExpiryDate = reader.IsDBNull(reader.GetOrdinal("expiry_date")) ? (DateTime?)null : reader.GetDateTime(reader.GetOrdinal("expiry_date")),
-                    Status = reader.GetString(reader.GetOrdinal("status")),
-                    CreatedAt = reader.GetDateTime(reader.GetOrdinal("created_at"))
-                });
-            }
+                BatchId = b.Id,
+                BatchCode = b.BatchCode,
+                HarvestDate = b.HarvestDate?.ToDateTime(TimeOnly.MinValue),
+                ExpiryDate = b.ExpiryDate?.ToDateTime(TimeOnly.MinValue),
+                Status = b.Status
+            }).ToList();
 
-            return Ok(new { success = true, data = batches });
+            return Ok(dtoList);
         }
 
-        // GET batch by ID
+        // GET api/retailer/batches/9
         [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetBatchById(int id)
+        public IActionResult GetById(int id)
         {
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
+            var batch = _business.GetBatchById(id);
+            if (batch == null) return NotFound();
 
-            var sql = @"SELECT id, batch_code, product_id, farm_id, created_by_user_id, harvest_date, quantity, unit, expiry_date, status, created_at
-                        FROM batches WHERE id = @id";
-            using var command = new SqlCommand(sql, connection);
-            command.Parameters.AddWithValue("@id", id);
-
-            using var reader = await command.ExecuteReaderAsync();
-            if (!await reader.ReadAsync())
-                return NotFound(new { success = false, message = "Batch not found" });
-
-            var batch = new
+            var dto = new RetailerBatchDetailDto
             {
-                Id = reader.GetInt32(reader.GetOrdinal("id")),
-                BatchCode = reader.GetString(reader.GetOrdinal("batch_code")),
-                ProductId = reader.GetInt32(reader.GetOrdinal("product_id")),
-                FarmId = reader.GetInt32(reader.GetOrdinal("farm_id")),
-                CreatedByUserId = reader.IsDBNull(reader.GetOrdinal("created_by_user_id")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("created_by_user_id")),
-                HarvestDate = reader.IsDBNull(reader.GetOrdinal("harvest_date")) ? (DateTime?)null : reader.GetDateTime(reader.GetOrdinal("harvest_date")),
-                Quantity = reader.IsDBNull(reader.GetOrdinal("quantity")) ? (decimal?)null : reader.GetDecimal(reader.GetOrdinal("quantity")),
-                Unit = reader.IsDBNull(reader.GetOrdinal("unit")) ? null : reader.GetString(reader.GetOrdinal("unit")),
-                ExpiryDate = reader.IsDBNull(reader.GetOrdinal("expiry_date")) ? (DateTime?)null : reader.GetDateTime(reader.GetOrdinal("expiry_date")),
-                Status = reader.GetString(reader.GetOrdinal("status")),
-                CreatedAt = reader.GetDateTime(reader.GetOrdinal("created_at"))
+                BatchId = batch.Id,
+                BatchCode = batch.BatchCode,
+                ProductName = batch.Product.Name,
+                HarvestDate = batch.HarvestDate?.ToDateTime(TimeOnly.MinValue),
+                ExpiryDate = batch.ExpiryDate?.ToDateTime(TimeOnly.MinValue),
+                Status = batch.Status,
+
+                // Chỗ mở rộng farm + inspections sau này
+                Source = null!
             };
 
-            return Ok(new { success = true, data = batch });
+            return Ok(dto);
         }
 
-        
+        // GET api/retailer/batches/by-product/3
+        [HttpGet("by-product/{productId:int}")]
+        public IActionResult GetByProduct(int productId)
+        {
+            var batches = _business.GetByProductId(productId);
+            var dtoList = batches.Select(b => new RetailerBatchListDto
+            {
+                BatchId = b.Id,
+                BatchCode = b.BatchCode,
+                HarvestDate = b.HarvestDate?.ToDateTime(TimeOnly.MinValue),
+                ExpiryDate = b.ExpiryDate?.ToDateTime(TimeOnly.MinValue),
+                Status = b.Status
+            }).ToList();
+
+            return Ok(dtoList);
+        }
+
+        // GET api/retailer/batches/by-farm/2
+        [HttpGet("by-farm/{farmId:int}")]
+        public IActionResult GetByFarm(int farmId)
+        {
+            var batches = _business.GetByFarmId(farmId);
+            var dtoList = batches.Select(b => new RetailerBatchListDto
+            {
+                BatchId = b.Id,
+                BatchCode = b.BatchCode,
+                HarvestDate = b.HarvestDate?.ToDateTime(TimeOnly.MinValue),
+                ExpiryDate = b.ExpiryDate?.ToDateTime(TimeOnly.MinValue),
+                Status = b.Status
+            }).ToList();
+
+            return Ok(dtoList);
+        }
+        [HttpGet("qr-trace")]
+        public IActionResult GetQrTrace()
+        {
+            // Lấy UserId từ JWT token
+            int retailerId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            // Gọi BLL
+            var batches = _business.GetQrTrace(retailerId);
+
+            // Map sang DTO để trả về frontend
+            var result = batches.Select(b => new RetailerQrTraceDto
+            {
+                BatchCode = b.BatchCode,
+                ProductName = b.Product.Name,
+                FarmName = b.Farm.Name,
+                HarvestDate = b.HarvestDate?.ToDateTime(TimeOnly.MinValue),
+                ExpiryDate = b.ExpiryDate?.ToDateTime(TimeOnly.MinValue),
+                Status = b.Status,
+                QrToken = b.QrCode?.Token ?? "",
+                QrUrl = b.QrCode?.Url,
+
+                Inspections = b.Inspections.Select(i => new RetailerInspectionDto
+                {
+                    InspectionDate = i.InspectionDate,
+                    QualityScore = i.QualityScore,
+                    Temperature = i.Temperature,
+                    Humidity = i.Humidity,
+                    ChemicalResidue = i.ChemicalResidue
+                }).ToList(),
+
+                Signatures = b.Inspections
+                    .Where(i => i.Signature != null)
+                    .Select(i => new RetailerDigitalSignatureDto
+                    {
+                        SignatureValue = i.Signature!.SignatureValue,
+                        SignatureMethod = i.Signature!.SignatureMethod,
+                        SignedAt = i.Signature!.SignedAt,
+                        ReferenceDocument = i.Signature!.ReferenceDocument,
+                        SignedBy = i.Signature!.SignerUser?.FullName
+                    }).ToList()
+            }).ToList();
+
+            return Ok(result);
+        }
     }
 }

@@ -87,8 +87,6 @@ namespace API_Farmer.Controllers
             return Ok(new { success = true, message = "Cập nhật trạng thái batch thành công" });
         }
 
-        // ===================== PRIVATE =====================
-        // Lấy userId từ JWT claims
         private int? GetCurrentUserId()
         {
             var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);

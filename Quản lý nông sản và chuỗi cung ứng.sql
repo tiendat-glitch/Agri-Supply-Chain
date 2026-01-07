@@ -378,6 +378,93 @@ BEGIN
     WHERE email = @Email
 END
 
+CREATE PROCEDURE SP_Retailer_GetBatches
+    @RetailerId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+    b.id AS batch_id,
+    b.batch_code,
+    b.harvest_date,
+    b.expiry_date,
+    b.status,
+    b.created_at,
+
+    p.id   AS product_id,
+    p.name AS product_name,
+
+    f.id   AS farm_id,
+    f.name AS farm_name,
+
+    q.id       AS qr_id,
+    q.token    AS qr_token,
+    q.url      AS qr_url,
+
+    rs.id       AS retailer_stock_id,
+    rs.quantity AS retailer_quantity
+FROM dbo.batches b
+INNER JOIN dbo.products p ON b.product_id = p.id
+INNER JOIN dbo.farms f ON b.farm_id = f.id
+LEFT JOIN dbo.qr_codes q ON q.batch_id = b.id
+LEFT JOIN dbo.retailer_stock rs 
+    ON rs.batch_id = b.id AND rs.retailer_id = @RetailerId
+ORDER BY b.created_at DESC;
+END
+--QR trace
+CREATE PROCEDURE SP_Retailer_GetQrTrace
+    @RetailerId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        b.id AS batch_id,
+        b.batch_code,
+        b.harvest_date,
+        b.expiry_date,
+        b.status,
+
+        p.name AS product_name,
+        f.name AS farm_name,
+        f.location AS farm_location,
+
+        q.token AS qr_token,
+        q.url AS qr_url,
+
+        i.id AS inspection_id,
+        i.inspection_date,
+        i.quality_score,
+        i.temperature,
+        i.humidity,
+        i.chemical_residue,
+
+        ds.id AS signature_id,
+        ds.signature_value,
+        ds.signature_method,
+        ds.signed_at,
+        u.full_name AS signer_name,
+        ds.reference_document,
+
+        rs.id AS retailer_stock_id,
+        rs.quantity AS retailer_quantity,
+        rs.unit AS retailer_unit
+
+    FROM dbo.batches b
+    INNER JOIN dbo.products p ON b.product_id = p.id
+    INNER JOIN dbo.farms f ON b.farm_id = f.id
+    LEFT JOIN dbo.qr_codes q ON q.batch_id = b.id
+    LEFT JOIN dbo.inspections i ON i.batch_id = b.id
+    LEFT JOIN dbo.digital_signatures ds ON ds.id = i.signature_id
+    LEFT JOIN dbo.users u ON u.id = ds.signer_user_id
+    LEFT JOIN dbo.retailer_stock rs 
+        ON rs.batch_id = b.id AND rs.retailer_id = @RetailerId
+    WHERE rs.id IS NOT NULL  -- Chỉ lấy batch có stock cho retailer
+    ORDER BY b.created_at DESC, i.inspection_date DESC;
+END
+
+
 
 
 
@@ -470,9 +557,9 @@ GO
 -- 13. RETAILER_STOCK
 INSERT INTO dbo.retailer_stock (retailer_id, batch_id, quantity, unit)
 VALUES 
-(1,1,80,'kg'),
-(1,2,40,'kg');
-GO
+(1, 9, 100.000, 'kg'),
+(1, 10, 50.500, 'kg');
+
 
 -- 14. DIGITAL_SIGNATURES
 INSERT INTO dbo.digital_signatures (signer_user_id, signature_method, signature_value, reference_document)
