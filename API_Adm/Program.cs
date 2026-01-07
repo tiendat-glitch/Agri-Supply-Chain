@@ -25,13 +25,14 @@ builder.Services.AddScoped<FarmRepository>();
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<AuditLogRepository>();
 builder.Services.AddScoped<InspectionRepository>();
+builder.Services.AddScoped<ProductRepository>();
 
 // BLL
 builder.Services.AddScoped<FarmBusiness>();
 builder.Services.AddScoped<UserProfileBusiness>();
 builder.Services.AddScoped<AuditLogBusiness>();
 builder.Services.AddScoped<InspectionBusiness>();
-
+builder.Services.AddScoped<bll_Product>();
 // JWT Authentication
 builder.Services.Configure<JWTsetting>(builder.Configuration.GetSection("JWTsetting"));
 var jwt = builder.Configuration.GetSection("JWTsetting").Get<JWTsetting>()

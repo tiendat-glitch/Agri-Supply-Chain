@@ -73,7 +73,7 @@ namespace DAL.Repositories
             var result = cmd.ExecuteScalar();
             int id = Convert.ToInt32(result);
 
-            // --- Ghi AuditLog ---
+
             _auditHelper.InsertLog(
                 batch.CreatedByUserId,
                 "INSERT",
@@ -88,7 +88,7 @@ namespace DAL.Repositories
 
         public bool Update(int id, Batch batch)
         {
-            // Lấy bản cũ để lưu AuditLog
+
             var oldBatch = GetById(id);
             if (oldBatch == null) return false;
 

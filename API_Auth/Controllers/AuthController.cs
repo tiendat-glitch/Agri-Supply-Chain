@@ -62,7 +62,7 @@ namespace API_Auth.Controllers
                 {
                     success = false,
                     message = ex.Message,
-                    detail = ex.ToString() // stack trace đầy đủ
+                    detail = ex.ToString()
                 });
             }
         }
