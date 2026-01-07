@@ -110,7 +110,7 @@ namespace DAL.Repositories
 
             using var reader = cmd.ExecuteReader();
 
-            // Batch + Product + Farm + QR
+            //Batch + Product + Farm + QR
             while (reader.Read())
             {
                 int batchId = (int)reader["batch_id"];
@@ -144,6 +144,7 @@ namespace DAL.Repositories
                 batches.Add(batchId, batch);
             }
 
+            //Inspections + Signatures
             if (reader.NextResult())
             {
                 while (reader.Read())
@@ -178,6 +179,7 @@ namespace DAL.Repositories
                 }
             }
 
+            //RetailerStock
             if (reader.NextResult())
             {
                 while (reader.Read())
@@ -198,6 +200,7 @@ namespace DAL.Repositories
 
             return batches.Values.ToList();
         }
+
         public List<Batch> GetByProductId(int productId)
         {
             var list = new List<Batch>();

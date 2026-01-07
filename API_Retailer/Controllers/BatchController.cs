@@ -99,10 +99,8 @@ namespace API_Retailer.Controllers
             // Lấy UserId từ JWT token
             int retailerId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-            // Gọi BLL
             var batches = _business.GetQrTrace(retailerId);
 
-            // Map sang DTO để trả về frontend
             var result = batches.Select(b => new RetailerQrTraceDto
             {
                 BatchCode = b.BatchCode,

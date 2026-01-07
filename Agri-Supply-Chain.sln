@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.1.11312.151 d18.0
+VisualStudioVersion = 18.1.11312.151
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "API_Auth", "API_Auth\API_Auth.csproj", "{3314EE7A-F285-5427-BF14-B71FBD23F750}"
 EndProject
@@ -24,6 +24,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "API_Distributor", "API_Distributor\API_Distributor.csproj", "{C79E4084-5A6C-4E74-8CEE-F73F7F9D4EF7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "API_Retailer", "API_Retailer\API_Retailer.csproj", "{DEF8A690-0C6D-484A-9EED-A34F08AE31EF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "debug", "debug\debug.csproj", "{D49A07B4-99F4-4EAF-B5A1-E2C9D9D60406}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -75,6 +77,10 @@ Global
 		{DEF8A690-0C6D-484A-9EED-A34F08AE31EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DEF8A690-0C6D-484A-9EED-A34F08AE31EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DEF8A690-0C6D-484A-9EED-A34F08AE31EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D49A07B4-99F4-4EAF-B5A1-E2C9D9D60406}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D49A07B4-99F4-4EAF-B5A1-E2C9D9D60406}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D49A07B4-99F4-4EAF-B5A1-E2C9D9D60406}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D49A07B4-99F4-4EAF-B5A1-E2C9D9D60406}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
