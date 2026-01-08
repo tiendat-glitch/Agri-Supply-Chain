@@ -9,7 +9,7 @@ using MMLib.SwaggerForOcelot.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ===== 1. CORS =====
+// 1. CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -18,20 +18,14 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader());
 });
 
-// ===== 2. Controllers + Swagger =====
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-
-// SwaggerForOcelot
+// 2. SwaggerForOcelot
 builder.Services.AddSwaggerForOcelot(builder.Configuration);
 
-// ===== 3. Ocelot Configuration =====
-builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
-builder.Services.AddOcelot(builder.Configuration);
-
-// ===== 4. JWT Authentication =====
+// 3. JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JWTsetting");
-var secretKey = jwtSettings["SecretKey"] ?? "MUONBIETMEONHIEUHON32KYTUVWXYZABCDEF";
+var secretKey = jwtSettings["SecretKey"]
+    ?? "MUONBIETMEONHIEUHON32KYTUVWXYZABCDEF";
+
 var key = Encoding.ASCII.GetBytes(secretKey);
 
 builder.Services.AddAuthentication(options =>
@@ -47,10 +41,13 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(key),
+
         ValidateIssuer = true,
-        ValidIssuers = new[] { "Admin", "Farmer", "Distributor", "Retailer", jwtSettings["Issuer"] },
+        ValidIssuer = jwtSettings["Issuer"],
+
         ValidateAudience = true,
         ValidAudience = jwtSettings["Audience"],
+
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
@@ -58,15 +55,21 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-// ===== Build App =====
+// 4. Ocelot
+builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
+builder.Services.AddOcelot(builder.Configuration);
+
+// Build App
 var app = builder.Build();
 
-// ===== Middleware =====
-app.UseRouting();
+// Middleware pipeline (CHUẨN)
+
 app.UseCors("AllowAll");
+
 app.UseAuthentication();
 app.UseAuthorization();
 
+<<<<<<< Updated upstream
 // Controllers riêng nếu có
 app.MapControllers();
 // ===== Redirect endpoints để dễ truy cập Swagger cho từng role =====
@@ -75,14 +78,43 @@ app.MapGet("/admin", async ctx => ctx.Response.Redirect("/admin/swagger", false)
 app.MapGet("/farmer", async ctx => ctx.Response.Redirect("/farmer/swagger", false));
 app.MapGet("/distributor", async ctx => ctx.Response.Redirect("/distributor/swagger", false));
 app.MapGet("/retailer", async ctx => ctx.Response.Redirect("/retailer/swagger", false));
+=======
+// Redirect tiện lợi
+app.MapGet("/auth", ctx =>
+{
+    ctx.Response.Redirect("/auth/swagger", false);
+    return Task.CompletedTask;
+});
+app.MapGet("/admin", ctx =>
+{
+    ctx.Response.Redirect("/admin/swagger", false);
+    return Task.CompletedTask;
+});
+app.MapGet("/farmer", ctx =>
+{
+    ctx.Response.Redirect("/farmer/swagger", false);
+    return Task.CompletedTask;
+});
+app.MapGet("/distributor", ctx =>
+{
+    ctx.Response.Redirect("/distributor/swagger", false);
+    return Task.CompletedTask;
+});
+app.MapGet("/retailer", ctx =>
+{
+    ctx.Response.Redirect("/retailer/swagger", false);
+    return Task.CompletedTask;
+});
 
-// ===== SwaggerForOcelot UI =====
+// SwaggerForOcelot UI
+>>>>>>> Stashed changes
+
 app.UseSwaggerForOcelotUI(options =>
 {
     options.PathToSwaggerGenerator = "/swagger/docs";
 });
 
-// ===== TỰ ĐỘNG KHỞI ĐỘNG CÁC API PHÍA SAU =====
+// Auto start APIs (DEV ONLY)
 var apis = new[]
 {
     new { Name = "API_Auth", Path = "../API_Auth/API_Auth.csproj", Port = 7246 },
@@ -102,8 +134,7 @@ foreach (var api in apis)
             Arguments = $"run --project {api.Path} --urls https://localhost:{api.Port}",
             UseShellExecute = false,
             RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = false
+            RedirectStandardError = true
         });
         Console.WriteLine($"Started {api.Name} on port {api.Port}");
     }
@@ -113,7 +144,7 @@ foreach (var api in apis)
     }
 }
 
-// ===== Ocelot Gateway =====
+// Ocelot Gateway
 await app.UseOcelot();
 
 app.Run();

@@ -20,8 +20,6 @@
 
     // Repository
     builder.Services.AddScoped<ProductRepository>();
-    builder.Services.AddScoped<FarmRepository>();
-    builder.Services.AddScoped<BatchRepository>();  
     builder.Services.AddScoped<AuditLogRepository>();
     builder.Services.AddScoped<WarehouseRepository>();
     builder.Services.AddScoped<ShipmentRepository>();
@@ -29,8 +27,6 @@
 
     // BLL
     builder.Services.AddScoped<bll_Product>();
-    builder.Services.AddScoped<FarmBusiness>();
-    builder.Services.AddScoped<BatchBusiness>();   
     builder.Services.AddScoped<AuditLogBusiness>();
     builder.Services.AddScoped<WarehouseBusiness>();
     builder.Services.AddScoped<ShipmentBusiness>();

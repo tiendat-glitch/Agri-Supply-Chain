@@ -10,7 +10,8 @@
           "Host": "localhost",
           "Port": 7079
         }
-      ]
+      ],
+      "SwaggerKey": "admin"
     },
     {
       "UpstreamPathTemplate": "/api/farmer/{everything}",
@@ -22,19 +23,8 @@
           "Host": "localhost",
           "Port": 7200
         }
-      ]
-    },
-    {
-      "UpstreamPathTemplate": "/api/auth/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
-      "DownstreamPathTemplate": "/{everything}",
-      "DownstreamScheme": "https",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "localhost",
-          "Port": 7246
-        }
-      ]
+      ],
+      "SwaggerKey": "farmer"
     },
     {
       "UpstreamPathTemplate": "/api/distributor/{everything}",
@@ -46,7 +36,8 @@
           "Host": "localhost",
           "Port": 7035
         }
-      ]
+      ],
+      "SwaggerKey": "distributor"
     },
     {
       "UpstreamPathTemplate": "/api/retailer/{everything}",
@@ -58,10 +49,11 @@
           "Host": "localhost",
           "Port": 7070
         }
-      ]
+      ],
+      "SwaggerKey": "retailer"
     }
   ],
-  "GlobalConfiguration": { "BaseUrl": "https://localhost:7246" },
+  "GlobalConfiguration": { "BaseUrl": "https://localhost:7025" },
   "SwaggerEndPoints": [
     {
       "Key": "admin",
