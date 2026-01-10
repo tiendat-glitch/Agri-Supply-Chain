@@ -27,17 +27,7 @@ namespace DAL.Repositories
             {
                 while (reader.Read())
                 {
-                    users.Add(new User
-                    {
-                        Id = reader.GetInt32(0),
-                        Username = reader.GetString(1),
-                        PasswordHash = reader.GetString(2),
-                        FullName = reader.IsDBNull(3) ? null : reader.GetString(3),
-                        Email = reader.IsDBNull(4) ? null : reader.GetString(4),
-                        Phone = reader.IsDBNull(5) ? null : reader.GetString(5),
-                        Role = reader.GetString(6),
-                        CreatedAt = reader.GetDateTime(7)
-                    });
+                    users.Add(UserMapper.Map(reader, includePassword: true));
                 }
             }
 
@@ -75,8 +65,7 @@ namespace DAL.Repositories
                 new SqlParameter("@PasswordHash", user.PasswordHash),
                 new SqlParameter("@FullName", user.FullName ?? (object)DBNull.Value),
                 new SqlParameter("@Email", user.Email ?? (object)DBNull.Value),
-                new SqlParameter("@Phone", user.Phone ?? (object)DBNull.Value),
-                new SqlParameter("@Role", user.Role)
+                new SqlParameter("@Phone", user.Phone ?? (object)DBNull.Value)
             };
 
             return _dbHelper.ExecuteNonQueryStoredProcedure(

@@ -271,19 +271,20 @@ BEGIN
     WHERE username = @Username;
 END
 --Đăng ký user mới
-CREATE PROCEDURE SP_RegisterUser
+CREATE OR ALTER PROCEDURE SP_RegisterUser
     @Username NVARCHAR(100),
     @PasswordHash NVARCHAR(255),
     @FullName NVARCHAR(200) = NULL,
     @Email NVARCHAR(255) = NULL,
-    @Phone NVARCHAR(50) = NULL,
-    @Role NVARCHAR(20)
+    @Phone NVARCHAR(50) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    INSERT INTO dbo.users (username, password_hash, full_name, email, phone, role, created_at)
-    VALUES (@Username, @PasswordHash, @FullName, @Email, @Phone, @Role, GETDATE());
+    INSERT INTO dbo.users
+        (username, password_hash, full_name, email, phone)
+    VALUES
+        (@Username, @PasswordHash, @FullName, @Email, @Phone);
 END
 --Cập nhật user
 CREATE PROCEDURE UpdateUser
@@ -413,65 +414,137 @@ LEFT JOIN dbo.retailer_stock rs
 ORDER BY b.created_at DESC;
 END
 --QR trace
-CREATE PROCEDURE SP_Retailer_GetQrTrace
+ALTER PROCEDURE SP_Retailer_GetQrTrace_v2
     @RetailerId INT
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT 
+    -- 1. Batch + Product + Farm + QR (FILTER THEO RETAILER)
+    SELECT DISTINCT
         b.id AS batch_id,
         b.batch_code,
         b.harvest_date,
         b.expiry_date,
         b.status,
-
+        p.id AS product_id,
         p.name AS product_name,
+        f.id AS farm_id,
         f.name AS farm_name,
         f.location AS farm_location,
-
+        q.id AS qr_id,
         q.token AS qr_token,
-        q.url AS qr_url,
+        q.url AS qr_url
+    FROM dbo.retailer_stock rs
+    INNER JOIN dbo.batches b ON rs.batch_id = b.id
+    INNER JOIN dbo.products p ON b.product_id = p.id
+    INNER JOIN dbo.farms f ON b.farm_id = f.id
+    LEFT JOIN dbo.qr_codes q ON q.batch_id = b.id
+    WHERE rs.retailer_id = @RetailerId
+    ORDER BY b.created_at DESC;
 
+    -- 2. Inspections + Digital Signature + Signer
+    SELECT
         i.id AS inspection_id,
+        i.batch_id,
         i.inspection_date,
         i.quality_score,
         i.temperature,
         i.humidity,
         i.chemical_residue,
-
         ds.id AS signature_id,
         ds.signature_value,
         ds.signature_method,
         ds.signed_at,
-        u.full_name AS signer_name,
         ds.reference_document,
+        u.id AS signer_id,
+        u.full_name AS signer_name
+    FROM dbo.inspections i
+    LEFT JOIN dbo.digital_signatures ds ON ds.id = i.signature_id
+    LEFT JOIN dbo.users u ON u.id = ds.signer_user_id
+    ORDER BY i.inspection_date DESC;
 
+    -- 3. Retailer Stock
+    SELECT
         rs.id AS retailer_stock_id,
+        rs.batch_id,
         rs.quantity AS retailer_quantity,
         rs.unit AS retailer_unit
+    FROM dbo.retailer_stock rs
+    WHERE rs.retailer_id = @RetailerId;
+END
 
-    FROM dbo.batches b
+CREATE PROCEDURE [dbo].[SP_Retailer_GetQrTrace_v3]
+    @RetailerId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    /* 1. Batch + Product + Farm + QR
+       👉 chỉ batch mà retailer có stock */
+    SELECT DISTINCT
+        b.id AS batch_id,
+        b.batch_code,
+        b.harvest_date,
+        b.expiry_date,
+        b.status,
+        p.id AS product_id,
+        p.name AS product_name,
+        f.id AS farm_id,
+        f.name AS farm_name,
+        f.location AS farm_location,
+        q.id AS qr_id,
+        q.token AS qr_token,
+        q.url AS qr_url
+    FROM dbo.retailer_stock rs
+    INNER JOIN dbo.batches b ON rs.batch_id = b.id
     INNER JOIN dbo.products p ON b.product_id = p.id
     INNER JOIN dbo.farms f ON b.farm_id = f.id
     LEFT JOIN dbo.qr_codes q ON q.batch_id = b.id
-    LEFT JOIN dbo.inspections i ON i.batch_id = b.id
+    WHERE rs.retailer_id = @RetailerId
+    ORDER BY b.id DESC;
+
+    /* 2. Inspections + Digital Signature */
+    SELECT
+        i.id AS inspection_id,
+        i.batch_id,
+        i.inspection_date,
+        i.quality_score,
+        i.temperature,
+        i.humidity,
+        i.chemical_residue,
+        ds.id AS signature_id,
+        ds.signature_value,
+        ds.signature_method,
+        ds.signed_at,
+        ds.reference_document,
+        u.id AS signer_id,
+        u.full_name AS signer_name
+    FROM dbo.inspections i
+    INNER JOIN dbo.retailer_stock rs ON rs.batch_id = i.batch_id
     LEFT JOIN dbo.digital_signatures ds ON ds.id = i.signature_id
     LEFT JOIN dbo.users u ON u.id = ds.signer_user_id
-    LEFT JOIN dbo.retailer_stock rs 
-        ON rs.batch_id = b.id AND rs.retailer_id = @RetailerId
-    WHERE rs.id IS NOT NULL  -- Chỉ lấy batch có stock cho retailer
-    ORDER BY b.created_at DESC, i.inspection_date DESC;
+    WHERE rs.retailer_id = @RetailerId
+    ORDER BY i.inspection_date DESC;
+
+    /* 3. Retailer stock */
+    SELECT
+        rs.id AS retailer_stock_id,
+        rs.batch_id,
+        rs.quantity,
+        rs.unit
+    FROM dbo.retailer_stock rs
+    WHERE rs.retailer_id = @RetailerId;
 END
 
 
+EXEC dbo.SP_Retailer_GetQrTrace_v3 @RetailerId = 4
 
 
 
 
 
-
-
+EXEC dbo.SP_Retailer_GetQrTrace_v3 @RetailerId = 1;
 
 
 

@@ -78,8 +78,7 @@ namespace API_Auth.Controllers
                     Username = request.Username,
                     FullName = request.FullName,
                     Email = request.Email,
-                    Phone = request.Phone,
-                    Role = request.Role
+                    Phone = request.Phone
                 };
 
                 _userBusiness.Register(user, request.Password);

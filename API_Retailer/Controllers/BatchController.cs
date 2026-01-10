@@ -1,6 +1,7 @@
 ﻿using API_Retailer.DTOs.Batch;
 using API_Retailer.DTOs.Qr;
 using API_Retailer.DTOs.Signature;
+using BLL;
 using BLL.Retailer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -76,27 +77,12 @@ namespace API_Retailer.Controllers
             return Ok(dtoList);
         }
 
-        // GET api/retailer/batches/by-farm/2
-        [HttpGet("by-farm/{farmId:int}")]
-        public IActionResult GetByFarm(int farmId)
-        {
-            var batches = _business.GetByFarmId(farmId);
-            var dtoList = batches.Select(b => new RetailerBatchListDto
-            {
-                BatchId = b.Id,
-                BatchCode = b.BatchCode,
-                HarvestDate = b.HarvestDate?.ToDateTime(TimeOnly.MinValue),
-                ExpiryDate = b.ExpiryDate?.ToDateTime(TimeOnly.MinValue),
-                Status = b.Status
-            }).ToList();
-
-            return Ok(dtoList);
-        }
+        
         [HttpGet("qr-trace")]
         public IActionResult GetQrTrace()
         {
-            // Lấy UserId từ JWT token
-            int retailerId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            int retailerId = _business.GetRetailerIdByUserId(userId);
 
             var batches = _business.GetQrTrace(retailerId);
 
@@ -133,6 +119,29 @@ namespace API_Retailer.Controllers
             }).ToList();
 
             return Ok(result);
+        }
+        [HttpGet("qr-trace/analyze")]
+        public IActionResult AnalyzeQrTrace()
+        {
+            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            int retailerId = _business.GetRetailerIdByUserId(userId);
+
+            var results = _business.AnalyzeQrTrace(retailerId);
+            var response = results.Select(r => new RetailerQrTraceAnalyzeDto
+            {
+                BatchId = r.BatchId,
+                BatchCode = r.BatchCode,
+                InspectionCount = r.InspectionCount,
+                AverageQualityScore = r.AverageQualityScore,
+                MaxChemicalResidue = r.MaxChemicalResidue ?? 0m,
+                MaxTemperature = r.MaxTemperature ?? 0m,
+                MaxHumidity = r.MaxHumidity ?? 0m,
+                RiskLevel = r.RiskLevel,
+                Decision = r.Decision,
+                Reason = r.Reason
+            });
+
+            return Ok(response);
         }
     }
 }

@@ -35,12 +35,10 @@ namespace BLL
         // đăng ký
         public void Register(User user, string password)
         {
-            if (_userRepo.GetUserByUsername(user.Username) != null)
-                throw new Exception("Username đã tồn tại");
-
+            if (_userRepo.GetUserByUsername(user.Username) != null) 
+                throw new Exception("Username đã tồn tại"); 
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
-            user.CreatedAt = DateTime.UtcNow;
-
+            user.Role = null;
             _userRepo.Register(user);
         }
 

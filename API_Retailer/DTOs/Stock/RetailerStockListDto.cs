@@ -10,5 +10,4 @@
         public DateTime? ExpiryDate { get; set; }
         public string BatchStatus { get; set; } = null!;
     }
-
 }

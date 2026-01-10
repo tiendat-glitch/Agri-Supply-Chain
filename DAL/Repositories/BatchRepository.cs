@@ -1,6 +1,7 @@
 ﻿using DAL.Helper;
-using Model;
+using DAL.Mappers;
 using Microsoft.Data.SqlClient;
+using Model;
 using System.Data;
 
 namespace DAL.Repositories
@@ -62,61 +63,22 @@ namespace DAL.Repositories
         {
             using var conn = _dbHelper.GetConnection();
 
-            const string sql = @"
-                SELECT 
-                    b.id, b.batch_code, b.harvest_date, b.expiry_date,
-                    b.status, b.created_at, b.created_by_user_id, b.quantity, b.unit, b.product_id,
-                    p.id AS product_id, p.name AS product_name
-                FROM dbo.batches b
-                INNER JOIN dbo.products p ON b.product_id = p.id
-                WHERE b.id = @Id";
-
-            using var cmd = new SqlCommand(sql, conn);
+            using var cmd = new SqlCommand("SP_Batch_GetById", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
             cmd.Parameters.AddWithValue("@Id", id);
 
             using var reader = cmd.ExecuteReader();
             if (!reader.Read()) return null;
 
-            return new Batch
-            {
-                Id = (int)reader["id"],
-                BatchCode = reader["batch_code"].ToString()!,
-                HarvestDate = reader["harvest_date"] == DBNull.Value
-                    ? null
-                    : DateOnly.FromDateTime((DateTime)reader["harvest_date"]),
-                ExpiryDate = reader["expiry_date"] == DBNull.Value
-                    ? null
-                    : DateOnly.FromDateTime((DateTime)reader["expiry_date"]),
-                Status = reader["status"].ToString()!,
-                CreatedAt = (DateTime)reader["created_at"],
-
-                CreatedByUserId = reader["created_by_user_id"] == DBNull.Value
-                    ? null
-                    : (int?)reader["created_by_user_id"],
-
-                Quantity = reader["quantity"] == DBNull.Value
-                    ? null
-                    : (decimal?)reader["quantity"],
-
-                Unit = reader["unit"] == DBNull.Value
-                    ? null
-                    : reader["unit"].ToString(),
-
-                ProductId = (int)reader["product_id"],
-
-                Product = new Product
-                {
-                    Id = (int)reader["product_id"],
-                    Name = reader["product_name"].ToString()!
-                }
-            };
+            return BatchMapper.Map(reader);
         }
+
         public List<Batch> GetQrTraceForRetailer(int retailerId)
         {
             var batches = new Dictionary<int, Batch>();
 
             using var conn = _dbHelper.GetConnection();
-            using var cmd = new SqlCommand("SP_Retailer_GetQrTrace_v2", conn)
+            using var cmd = new SqlCommand("SP_Retailer_GetQrTrace_v3", conn)
             {
                 CommandType = CommandType.StoredProcedure
             };
@@ -128,121 +90,128 @@ namespace DAL.Repositories
             while (reader.Read())
             {
                 int batchId = (int)reader["batch_id"];
-                var batch = new Batch
-                {
-                    Id = batchId,
-                    BatchCode = reader["batch_code"] as string ?? "",
-                    Status = reader["status"] as string ?? "",
-                    HarvestDate = reader["harvest_date"] as DateTime? is DateTime dt ? DateOnly.FromDateTime(dt) : null,
-                    ExpiryDate = reader["expiry_date"] as DateTime? is DateTime ed ? DateOnly.FromDateTime(ed) : null,
-                    Product = new Product
-                    {
-                        Id = (int)reader["product_id"],
-                        Name = reader["product_name"] as string ?? ""
-                    },
-                    Farm = new Farm
-                    {
-                        Id = (int)reader["farm_id"],
-                        Name = reader["farm_name"] as string ?? "",
-                        Location = reader["farm_location"] as string
-                    },
-                    QrCode = reader["qr_id"] != DBNull.Value ? new QrCode
-                    {
-                        Id = (int)reader["qr_id"],
-                        Token = reader["qr_token"] as string ?? "",
-                        Url = reader["qr_url"] as string
-                    } : null,
-                    Inspections = new List<Inspection>(),
-                    RetailerStocks = new List<RetailerStock>()
-                };
-                batches.Add(batchId, batch);
-            }
 
-            //Inspections + Signatures
-            if (reader.NextResult())
-            {
-                while (reader.Read())
+                if (!batches.ContainsKey(batchId))
                 {
-                    int batchId = (int)reader["batch_id"];
-                    if (batches.TryGetValue(batchId, out var batch))
+                    batches[batchId] = new Batch
                     {
-                        var insp = new Inspection
+                        Id = batchId,
+                        BatchCode = reader["batch_code"]?.ToString() ?? "",
+                        Status = reader["status"]?.ToString() ?? "",
+                        HarvestDate = reader["harvest_date"] is DateTime hd
+                            ? DateOnly.FromDateTime(hd)
+                            : null,
+                        ExpiryDate = reader["expiry_date"] is DateTime ed
+                            ? DateOnly.FromDateTime(ed)
+                            : null,
+
+                        Product = new Product
                         {
-                            Id = (int)reader["inspection_id"],
-                            InspectionDate = (DateTime)reader["inspection_date"],
-                            QualityScore = reader["quality_score"] as int?,
-                            Temperature = reader["temperature"] as decimal?,
-                            Humidity = reader["humidity"] as decimal?,
-                            ChemicalResidue = reader["chemical_residue"] as decimal?,
-                            Signature = reader["signature_id"] != DBNull.Value ? new DigitalSignature
+                            Id = (int)reader["product_id"],
+                            Name = reader["product_name"]?.ToString() ?? ""
+                        },
+
+                        Farm = new Farm
+                        {
+                            Id = (int)reader["farm_id"],
+                            Name = reader["farm_name"]?.ToString() ?? "",
+                            Location = reader["farm_location"]?.ToString()
+                        },
+
+                        QrCode = reader["qr_id"] != DBNull.Value
+                            ? new QrCode
                             {
-                                Id = (int)reader["signature_id"],
-                                SignatureValue = reader["signature_value"] as string ?? "",
-                                SignatureMethod = reader["signature_method"] as string ?? "",
-                                SignedAt = (DateTime)reader["signed_at"],
-                                ReferenceDocument = reader["reference_document"] as string,
-                                SignerUser = reader["signer_id"] != DBNull.Value ? new User
-                                {
-                                    Id = (int)reader["signer_id"],
-                                    FullName = reader["signer_name"] as string
-                                } : null
-                            } : null
-                        };
-                        batch.Inspections.Add(insp);
-                    }
+                                Id = (int)reader["qr_id"],
+                                Token = reader["qr_token"]?.ToString() ?? "",
+                                Url = reader["qr_url"]?.ToString()
+                            }
+                            : null,
+
+                        Inspections = new List<Inspection>(),
+                        RetailerStocks = new List<RetailerStock>()
+                    };
                 }
             }
 
-            //RetailerStock
+            //Inspections + Digital Signature
             if (reader.NextResult())
             {
                 while (reader.Read())
                 {
                     int batchId = (int)reader["batch_id"];
-                    if (batches.TryGetValue(batchId, out var batch))
+
+                    if (!batches.TryGetValue(batchId, out var batch))
+                        continue;
+
+                    var inspection = new Inspection
                     {
-                        var stock = new RetailerStock
-                        {
-                            Id = (int)reader["retailer_stock_id"],
-                            Quantity = (decimal)reader["retailer_quantity"],
-                            Unit = reader["retailer_unit"] as string ?? ""
-                        };
-                        batch.RetailerStocks.Add(stock);
-                    }
+                        Id = (int)reader["inspection_id"],
+                        InspectionDate = (DateTime)reader["inspection_date"],
+                        QualityScore = reader["quality_score"] as int?,
+                        Temperature = reader["temperature"] as decimal?,
+                        Humidity = reader["humidity"] as decimal?,
+                        ChemicalResidue = reader["chemical_residue"] as decimal?,
+
+                        Signature = reader["signature_id"] != DBNull.Value
+                            ? new DigitalSignature
+                            {
+                                Id = (int)reader["signature_id"],
+                                SignatureValue = reader["signature_value"]?.ToString() ?? "",
+                                SignatureMethod = reader["signature_method"]?.ToString() ?? "",
+                                SignedAt = (DateTime)reader["signed_at"],
+                                ReferenceDocument = reader["reference_document"]?.ToString(),
+
+                                SignerUser = reader["signer_id"] != DBNull.Value
+                                    ? new User
+                                    {
+                                        Id = (int)reader["signer_id"],
+                                        FullName = reader["signer_name"]?.ToString()
+                                    }
+                                    : null
+                            }
+                            : null
+                    };
+
+                    batch.Inspections.Add(inspection);
+                }
+            }
+
+            //Retailer Stock
+            if (reader.NextResult())
+            {
+                while (reader.Read())
+                {
+                    int batchId = (int)reader["batch_id"];
+
+                    if (!batches.TryGetValue(batchId, out var batch))
+                        continue;
+
+                    batch.RetailerStocks.Add(new RetailerStock
+                    {
+                        Id = (int)reader["retailer_stock_id"],
+                        Quantity = (decimal)reader["quantity"],
+                        Unit = reader["unit"]?.ToString() ?? ""
+                    });
                 }
             }
 
             return batches.Values.ToList();
         }
-
         public List<Batch> GetByProductId(int productId)
         {
             var list = new List<Batch>();
             using var conn = _dbHelper.GetConnection();
 
-            const string sql = @"
-                SELECT id, batch_code, product_id,
-                       quantity, unit, status, created_at
-                FROM dbo.batches
-                WHERE product_id = @ProductId
-                ORDER BY created_at DESC";
-
-            using var cmd = new SqlCommand(sql, conn);
+            using var cmd = new SqlCommand("SP_Batch_GetByProductId", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
             cmd.Parameters.AddWithValue("@ProductId", productId);
 
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
             {
-                list.Add(new Batch
-                {
-                    Id = (int)reader["id"],
-                    BatchCode = reader["batch_code"].ToString()!,
-                    ProductId = (int)reader["product_id"],
-                    Quantity = reader["quantity"] as decimal?,
-                    Unit = reader["unit"]?.ToString(),
-                    Status = reader["status"].ToString()!,
-                    CreatedAt = (DateTime)reader["created_at"]
-                });
+                list.Add(BatchMapper.MapSimple(reader));
             }
 
             return list;
@@ -253,34 +222,16 @@ namespace DAL.Repositories
             var list = new List<Batch>();
             using var conn = _dbHelper.GetConnection();
 
-            const string sql = @"
-                SELECT id, batch_code, product_id, farm_id,
-                       harvest_date, quantity, unit,
-                       status, created_at
-                FROM dbo.batches
-                WHERE farm_id = @FarmId
-                ORDER BY created_at DESC";
-
-            using var cmd = new SqlCommand(sql, conn);
+            using var cmd = new SqlCommand("SP_Batch_GetByFarmId", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
             cmd.Parameters.AddWithValue("@FarmId", farmId);
 
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
             {
-                list.Add(new Batch
-                {
-                    Id = (int)reader["id"],
-                    BatchCode = reader["batch_code"].ToString()!,
-                    ProductId = (int)reader["product_id"],
-                    FarmId = (int)reader["farm_id"],
-                    HarvestDate = reader["harvest_date"] == DBNull.Value
-                        ? null
-                        : DateOnly.FromDateTime((DateTime)reader["harvest_date"]),
-                    Quantity = reader["quantity"] as decimal?,
-                    Unit = reader["unit"]?.ToString(),
-                    Status = reader["status"].ToString()!,
-                    CreatedAt = (DateTime)reader["created_at"]
-                });
+                list.Add(BatchMapper.MapForFarm(reader));
             }
 
             return list;
@@ -400,6 +351,17 @@ namespace DAL.Repositories
             }
 
             return ok;
+        }
+        public int GetRetailerIdByUserId(int userId)
+        {
+            using var conn = _dbHelper.GetConnection();
+            using var cmd = new SqlCommand(
+                "SELECT id FROM retailers WHERE user_id = @uid",
+                conn
+            );
+            cmd.Parameters.AddWithValue("@uid", userId);
+
+            return (int?)cmd.ExecuteScalar() ?? 0;
         }
 
         public bool UpdateStatus(int id, string status)

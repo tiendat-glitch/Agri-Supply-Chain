@@ -3,13 +3,14 @@ using Microsoft.IdentityModel.Tokens;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
 using System.Diagnostics;
+using System.Net.Http;
 using System.Text;
 using MMLib.SwaggerForOcelot.DependencyInjection;
 using MMLib.SwaggerForOcelot.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ===== 1. CORS =====
+// 1️⃣ CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -18,18 +19,17 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader());
 });
 
-// ===== 2. Controllers + Swagger =====
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-
-// SwaggerForOcelot
+// 2️⃣ SwaggerForOcelot với HTTPS self-signed bypass
 builder.Services.AddSwaggerForOcelot(builder.Configuration);
 
-// ===== 3. Ocelot Configuration =====
-builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
-builder.Services.AddOcelot(builder.Configuration);
+builder.Services.AddHttpClient("SwaggerForOcelot")
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    {
+        ServerCertificateCustomValidationCallback =
+            HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+    });
 
-// ===== 4. JWT Authentication =====
+// 3️⃣ JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JWTsetting");
 var secretKey = jwtSettings["SecretKey"] ?? "MUONBIETMEONHIEUHON32KYTUVWXYZABCDEF";
 var key = Encoding.ASCII.GetBytes(secretKey);
@@ -48,7 +48,7 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(key),
         ValidateIssuer = true,
-        ValidIssuers = new[] { "Admin", "Farmer", "Distributor", "Retailer", jwtSettings["Issuer"] },
+        ValidIssuer = jwtSettings["Issuer"],
         ValidateAudience = true,
         ValidAudience = jwtSettings["Audience"],
         ValidateLifetime = true,
@@ -58,37 +58,30 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-// ===== Build App =====
+// 4️⃣ Ocelot
+builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
+builder.Services.AddOcelot(builder.Configuration);
+
 var app = builder.Build();
 
-// ===== Middleware =====
-app.UseRouting();
+// Middleware
 app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
-
-// Controllers riêng nếu có
 app.MapControllers();
 
-// ===== Redirect endpoints để dễ truy cập Swagger cho từng role =====
-app.MapGet("/auth", async ctx => ctx.Response.Redirect("/auth/swagger", false));
-app.MapGet("/admin", async ctx => ctx.Response.Redirect("/admin/swagger", false));
-app.MapGet("/farmer", async ctx => ctx.Response.Redirect("/farmer/swagger", false));
-app.MapGet("/distributor", async ctx => ctx.Response.Redirect("/distributor/swagger", false));
-app.MapGet("/retailer", async ctx => ctx.Response.Redirect("/retailer/swagger", false));
-
-// ===== SwaggerForOcelot UI =====
+// Swagger UI
 app.UseSwaggerForOcelotUI(options =>
 {
     options.PathToSwaggerGenerator = "/swagger/docs";
 });
 
-// ===== TỰ ĐỘNG KHỞI ĐỘNG CÁC API PHÍA SAU =====
+// ===== Auto start APIs (Dev only) =====
 var apis = new[]
 {
+    new { Name = "API_Auth", Path = "../API_Auth/API_Auth.csproj", Port = 7246 },
     new { Name = "API_Admin", Path = "../API_Adm/API_Adm.csproj", Port = 7079 },
     new { Name = "API_Farmer", Path = "../API_Farmer/API_Farmer.csproj", Port = 7200 },
-    new { Name = "API_Auth", Path = "../API_Auth/API_Auth.csproj", Port = 7246 },
     new { Name = "API_Distributor", Path = "../API_Distributor/API_Distributor.csproj", Port = 7035 },
     new { Name = "API_Retailer", Path = "../API_Retailer/API_Retailer.csproj", Port = 7070 }
 };
@@ -103,10 +96,37 @@ foreach (var api in apis)
             Arguments = $"run --project {api.Path} --urls https://localhost:{api.Port}",
             UseShellExecute = false,
             RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = false
+            RedirectStandardError = true
         });
-        Console.WriteLine($"Started {api.Name} on port {api.Port}");
+
+        Console.WriteLine($"Starting {api.Name} on port {api.Port}...");
+
+        // ===== Wait until API is ready =====
+        var isReady = false;
+        using var client = new HttpClient(new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback =
+                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        });
+        for (int i = 0; i < 20; i++) // try 20 lần, 1s delay each
+        {
+            try
+            {
+                var response = client.GetAsync($"https://localhost:{api.Port}/swagger/v1/swagger.json").Result;
+                if (response.IsSuccessStatusCode)
+                {
+                    isReady = true;
+                    break;
+                }
+            }
+            catch { }
+            await Task.Delay(1000);
+        }
+
+        if (!isReady)
+            Console.WriteLine($"{api.Name} not ready after 20s");
+        else
+            Console.WriteLine($"{api.Name} is ready!");
     }
     catch (Exception ex)
     {
@@ -114,7 +134,7 @@ foreach (var api in apis)
     }
 }
 
-// ===== Ocelot Gateway =====
+// 5️⃣ Run Ocelot Gateway
 await app.UseOcelot();
 
 app.Run();
